@@ -1,9 +1,9 @@
 * 基础
   * [日志打印](api/log.md)
+  * [定时器](api/timer.md)
   * [uni.base64ToArrayBuffer](api/base64ToArrayBuffer?id=base64toarraybuffer)
   * [uni.arrayBufferToBase64](api/arrayBufferToBase64?id=arraybuffertobase64)
-  * [定时器](api/timer.md)
-  * [生命周期](api/lifetime.md)
+  * [生命周期](api/lifecycle.md)
 * 网络
   * [发起请求](api/request/request.md)
   * [上传、下载](api/request/network-file.md)
@@ -64,9 +64,11 @@
   * [电量](api/system/batteryInfo.md)
   * [NFC](api/system/nfc.md)
   * [设备方向](api/system/deviceMotion.md)
-* [Worker](api/worder.md)
+  * [生物认证](api/system/authentication.md)
+* [Worker](api/worker.md)
 * 键盘
   * [uni.hideKeyboard](/api/key?id=hidekeyboard)
+  * [uni.onKeyboardHeightChange](/api/key?id=onkeyboardheightchange)
 * 界面
   * [交互反馈](api/ui/prompt.md)
   * [设置导航条](api/ui/navigationbar.md)
@@ -101,6 +103,8 @@
 	* [uni.canvasGetImageData](api/canvas/canvasGetImageData.md)
 	* [CanvasContext](api/canvas/CanvasContext.md)
 	* [CanvasGradient](api/canvas/CanvasGradient.md)
+* 广告
+  * [激励视频广告](api/ad/rewarded-video-ad.md)
 * 第三方服务
   * [获取服务供应商](api/plugins/provider.md)
   * [登录](api/plugins/login.md)
@@ -117,15 +121,16 @@
   * [获取发票抬头](api/other/invoice-title.md)
   * [小程序跳转](api/other/open-miniprogram.md)
   * [账号信息](api/other/getAccountInfoSync.md)
-  * [生物认证(指纹及人脸识别)](api/other/authentication.md)
   * [运动(计步器)](api/other/sport.md)
   * [统计](api/other/report.md)
   * [卡券](api/other/card.md)
   * [模板消息](api/other/template.md)
+  * [订阅消息](api/other/requestSubscribeMessage.md)
   * [小程序更新](api/other/update.md)
   * [调试](api/other/set-enable-debug.md)
   * [获取第三方平台数据](api/other/get-extconfig.md)
   * [广告](api/other/advertisement.md)
+
 <li></li>
 <div class="contact-box">
   <a href="//ask.dcloud.net.cn/explore/" target="_blank" class="contact-item">
@@ -146,7 +151,8 @@
     <img src="//img-cdn-qiniu.dcloud.net.cn/uniapp/doc/qq@2x.png" width="20" height="20"/>
     <div class="contact-smg">
        <div>官方QQ交流群</div>
-    <div>群26：147867597 &nbsp;<a target="_blank" href="//shang.qq.com/wpa/qunwpa?idkey=28a1a9a3e8f1866ee6a5f2b1caba05039e30d3ae1461e64b2ec31c095fcab951">点此加入</a></div>
+    <div>群26：147867597 &nbsp;<a target="_blank" href="//shang.qq.com/wpa/qunwpa?id
+      =28a1a9a3e8f1866ee6a5f2b1caba05039e30d3ae1461e64b2ec31c095fcab951">点此加入</a></div>
 		<div>群35：713420817（2000人已满）</div>
 		<div>群34：530305531（2000人已满）</div>
 		<div>群33：498071674（2000人已满）</div>

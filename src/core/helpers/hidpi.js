@@ -1,12 +1,13 @@
 export const pixelRatio = (function () {
   const canvas = document.createElement('canvas')
+  canvas.height = canvas.width = 0
   const context = canvas.getContext('2d')
   const backingStore = context.backingStorePixelRatio ||
-        context.webkitBackingStorePixelRatio ||
-        context.mozBackingStorePixelRatio ||
-        context.msBackingStorePixelRatio ||
-        context.oBackingStorePixelRatio ||
-        context.backingStorePixelRatio || 1
+    context.webkitBackingStorePixelRatio ||
+    context.mozBackingStorePixelRatio ||
+    context.msBackingStorePixelRatio ||
+    context.oBackingStorePixelRatio ||
+    context.backingStorePixelRatio || 1
   return (window.devicePixelRatio || 1) / backingStore
 })()
 
@@ -35,9 +36,27 @@ const ratioArgs = {
   'createLinearGradient': 'all',
   'setTransform': [4, 5]
 }
-if (pixelRatio !== 1) {
-  const proto = CanvasRenderingContext2D.prototype
 
+const proto = CanvasRenderingContext2D.prototype
+
+proto.drawImageByCanvas = (function (_super) {
+  return function (canvas, srcx, srcy, srcw, srch, desx, desy, desw, desh, isScale) {
+    if (!this.__hidpi__) {
+      return _super.apply(this, arguments)
+    }
+    srcx *= pixelRatio
+    srcy *= pixelRatio
+    srcw *= pixelRatio
+    srch *= pixelRatio
+    desx *= pixelRatio
+    desy *= pixelRatio
+    desw = isScale ? desw * pixelRatio : desw
+    desh = isScale ? desh * pixelRatio : desh
+    _super.call(this, canvas, srcx, srcy, srcw, srch, desx, desy, desw, desh)
+  }
+})(proto.drawImage)
+
+if (pixelRatio !== 1) {
   forEach(ratioArgs, function (value, key) {
     proto[key] = (function (_super) {
       return function () {
@@ -128,23 +147,6 @@ if (pixelRatio !== 1) {
     }
   })(proto.strokeText)
 
-  proto.drawImageByCanvas = (function (_super) {
-    return function (canvas, srcx, srcy, srcw, srch, desx, desy, desw, desh, isScale) {
-      if (!this.__hidpi__) {
-        return _super.apply(this, arguments)
-      }
-      srcx *= pixelRatio
-      srcy *= pixelRatio
-      srcw *= pixelRatio
-      srch *= pixelRatio
-      desx *= pixelRatio
-      desy *= pixelRatio
-      desw = isScale ? desw * pixelRatio : desw
-      desh = isScale ? desh * pixelRatio : desh
-      _super.call(this, canvas, srcx, srcy, srcw, srch, desx, desy, desw, desh)
-    }
-  })(proto.drawImage)
-
   proto.drawImage = (function (_super) {
     return function () {
       if (!this.__hidpi__) {
@@ -158,9 +160,7 @@ if (pixelRatio !== 1) {
 }
 
 export function wrapper (canvas) {
-  canvas.style.height = canvas.height + 'px'
-  canvas.style.width = canvas.width + 'px'
-  canvas.width *= pixelRatio
-  canvas.height *= pixelRatio
+  canvas.width = canvas.offsetWidth * pixelRatio
+  canvas.height = canvas.offsetHeight * pixelRatio
   canvas.getContext('2d').__hidpi__ = true
 }

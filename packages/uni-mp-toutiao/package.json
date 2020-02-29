@@ -1,11 +1,17 @@
 {
-	"name": "@dcloudio/uni-mp-toutiao",
-	"version": "0.0.346",
-	"description": "uni-app mp-toutiao",
-	"main": "dist/index.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"author": "fxy060608",
-	"license": "Apache-2.0"
+  "name": "@dcloudio/uni-mp-toutiao",
+  "version": "2.0.0-alpha-24720191216006",
+  "description": "uni-app mp-toutiao",
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dcloudio/uni-app.git",
+    "directory": "packages/uni-mp-toutiao"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "fxy060608",
+  "license": "Apache-2.0",
+  "gitHead": "110501ffb0313e417858dec92acf07522d4ded00"
 }

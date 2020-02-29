@@ -20,12 +20,22 @@ export default function parseBaseComponent (vueComponentOptions, {
   initRelation
 } = {}) {
   let [VueComponent, vueOptions] = initVueComponent(Vue, vueComponentOptions)
+  
+  const options = {
+    multipleSlots: true,
+    addGlobalClass: true,
+    ...(vueOptions.options || {})
+  }
+
+  if (__PLATFORM__ === 'mp-weixin' || __PLATFORM__ === 'mp-qq') {
+    // 微信 multipleSlots 部分情况有 bug，导致内容顺序错乱 如 u-list，提供覆盖选项
+    if (vueOptions['mp-weixin'] && vueOptions['mp-weixin']['options']) {
+      Object.assign(options, vueOptions['mp-weixin']['options'])
+    }
+  }
 
   const componentOptions = {
-    options: {
-      multipleSlots: true,
-      addGlobalClass: true
-    },
+    options,
     data: initData(vueOptions, Vue.prototype),
     behaviors: initBehaviors(vueOptions, initBehavior),
     properties: initProperties(vueOptions.props, false, vueOptions.__file),
@@ -68,7 +78,7 @@ export default function parseBaseComponent (vueComponentOptions, {
         }
       },
       detached () {
-        this.$vm.$destroy()
+        this.$vm && this.$vm.$destroy()
       }
     },
     pageLifetimes: {
@@ -86,6 +96,14 @@ export default function parseBaseComponent (vueComponentOptions, {
       __l: handleLink,
       __e: handleEvent
     }
+  }
+
+  if (Array.isArray(vueOptions.wxsCallMethods)) {
+    vueOptions.wxsCallMethods.forEach(callMethod => {
+      componentOptions.methods[callMethod] = function (args) {
+        return this.$vm[callMethod](args)
+      }
+    })
   }
 
   if (isPage) {

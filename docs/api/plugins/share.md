@@ -5,8 +5,8 @@
 
 |平台|说明|
 |:-|:-|
-|App|使用 ``uni.share`` 进行分享，需要在 `manifest.json` 里配置各平台分享所必需的的字段，如appid、appsecret等|
-|小程序|不支持方法调用，只能用户主动点击触发分享，可使用 <button open-type="share"> 和 onShareAppMessage 进行自定义|
+|App|使用 ``uni.share`` 进行分享，需要在 `manifest.json` 里配置各平台分享所必需的的字段，如appid等|
+|小程序|不支持方法调用，只能用户主动点击触发分享，可使用 &lt;button open-type="share"&gt; 和 onShareAppMessage 进行自定义|
 |H5|如果是普通浏览器，浏览器自带分享按钮；如果是在微信内嵌浏览器中调用js-sdk，[参考](https://ask.dcloud.net.cn/article/35380)|
 
 
@@ -20,7 +20,7 @@
 |scene|String|provider 为 weixin 时必选|场景，可取值参考下面说明。|
 |summary|String|type 为 1 时必选|摘要|
 |href|String|type 为 0 时必选|跳转链接|
-|imageUrl|String|type 为 0、2、5 时必选|图片地址，type为0时，图片大小于 20Kb|
+|imageUrl|String|type 为 0、2、5 时必选|图片地址。type为0时，推荐使用小于20Kb的图片|
 |mediaUrl|String|type 为 3、4 时必选|音视频地址|
 |miniProgram|Object|type 为 5 时必选|分享小程序必要参数|
 |success|Function|否|接口调用成功的回调|
@@ -68,6 +68,7 @@
 * 分享新浪微博不会返回正确的成功回调
 * 不能直接分享到QQ空间，可以分享到QQ，然后在QQ的界面里选择QQ空间。
 * 分享微信朋友圈多图，微信官方已经禁掉这个功能。可以考虑把多张图用canvas合并成一张图分享出去。
+* 从APP分享到微信时，无法判断用户点击取消分享，因为微信官方禁掉了分享成功的返回值。
 
 #### 分享到微信聊天界面
 
@@ -188,6 +189,7 @@ uni.share({
 ```javascript
 uni.share({
     provider: 'weixin',
+    scene: "WXSceneSession",
     type: 5,
     imageUrl: 'https://img-cdn-qiniu.dcloud.net.cn/uniapp/app/share-logo@3.png',
     title: '欢迎体验uniapp',
@@ -208,12 +210,12 @@ uni.share({
 
 小程序中用户点击分享后，在 js 中定义 onShareAppMessage 处理函数（和 onLoad 等生命周期函数同级），设置该页面的分享信息。
 
-* 用户点击分享按钮的时候会调用。这个分享按钮可能是小程序原生菜单自带的分享按钮，也可能是开发者在页面中放置的分享按钮（<button open-type="share">）；
+* 用户点击分享按钮的时候会调用。这个分享按钮可能是小程序原生菜单自带的分享按钮，也可能是开发者在页面中放置的分享按钮（\<button open-type="share">）；
 * 此事件需要 return 一个Object，用于自定义分享内容。
 
 **平台差异说明**
 
-|5+App|H5|微信小程序|支付宝小程序|百度小程序|头条小程序|
+|App|H5|微信小程序|支付宝小程序|百度小程序|头条小程序|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |x|x|√|√|√|√|
 
@@ -261,7 +263,7 @@ export default {
 
 **平台差异说明**
 
-|5+App|H5|微信小程序|支付宝小程序|百度小程序|头条小程序|
+|App|H5|微信小程序|支付宝小程序|百度小程序|头条小程序|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |x|x|√|x|√|√|
 
@@ -281,7 +283,7 @@ export default {
 
 **平台差异说明**
 
-|5+App|H5|微信小程序|支付宝小程序|百度小程序|头条小程序|
+|App|H5|微信小程序|支付宝小程序|百度小程序|头条小程序|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |x|x|√|√|x|√|
 
@@ -305,9 +307,14 @@ uni.hideShareMenu()
 
 #### 微信分享
 
-在 manifest.json 的 App SDK 配置里，勾选微信消息及朋友圈，并填写相关 appkey，微信 appkey 申请步骤可参考：[https://ask.dcloud.net.cn/article/208](https://ask.dcloud.net.cn/article/208)。
+在 manifest.json 的 App SDK 配置里，勾选微信消息及朋友圈，并填写 appid，如需在iOS平台使用还需要配置通用链接。
 
-![](https://img-cdn-qiniu.dcloud.net.cn/uniapp/doc/uni2019022501.png)
+**参考文档**
+
+- 微信 appid 申请步骤：[https://ask.dcloud.net.cn/article/208](https://ask.dcloud.net.cn/article/208)。
+- iOS平台微信SDK配置通用链接：[https://ask.dcloud.net.cn/article/36445](https://ask.dcloud.net.cn/article/36445)。
+
+![](https://img.cdn.aliyun.dcloud.net.cn/uni-app/doc/mp-weixin-manifest-share.png)
 
 #### 新浪微博分享
 在 manifest.json 的 App SDK 配置里，勾选勾选新浪微博，并填写相关appkey，新浪微博 appkey 申请步骤可参考：[https://ask.dcloud.net.cn/article/209](https://ask.dcloud.net.cn/article/209)。
@@ -331,5 +338,5 @@ uni.hideShareMenu()
 
 
 ##### FAQ
-- Q：App端如何集成其他登陆SDK
-- A：使用原生插件方式，可以集成三方sdk，原生插件开发文档见[https://ask.dcloud.net.cn/article/35428](https://ask.dcloud.net.cn/article/35428)。开发之前可以先去[插件市场](https://ext.dcloud.net.cn/)看下有没有做好的。
+- Q：App端如何集成其他分享SDK，如facebook分享、twitter分享
+- A：插件市场已有相关插件，[详见](https://ext.dcloud.net.cn/search?q=%E5%88%86%E4%BA%AB)；也可以根据原生插件教程自行开发，原生插件开发文档见[https://ask.dcloud.net.cn/article/35428](https://ask.dcloud.net.cn/article/35428)

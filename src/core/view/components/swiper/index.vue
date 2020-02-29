@@ -61,6 +61,10 @@ export default {
     displayMultipleItems: {
       type: [Number, String],
       default: 1
+    },
+    disableTouch: {
+      type: [Boolean, String],
+      default: false
     }
   },
   data () {
@@ -166,6 +170,7 @@ export default {
   },
   beforeDestroy () {
     this._cancelSchedule()
+    cancelAnimationFrame(this._animationFrame)
   },
   methods: {
     _inintAutoplay (enable) {
@@ -371,6 +376,23 @@ export default {
         slideFrame.style.transform = transform
       }
       this._viewportPosition = index
+      if (!this._transitionStart) {
+        if (index % 1 === 0) {
+          return
+        }
+        this._transitionStart = index
+      }
+      index -= Math.floor(this._transitionStart)
+      if (index <= -(this.items.length - 1)) {
+        index += this.items.length
+      } else if (index >= this.items.length) {
+        index -= this.items.length
+      }
+      index = this._transitionStart % 1 > 0.5 || this._transitionStart < 0 ? index - 1 : index
+      this.$trigger('transition', {}, {
+        dx: this.vertical ? 0 : index * slideFrame.offsetWidth,
+        dy: this.vertical ? index * slideFrame.offsetHeight : 0
+      })
     },
     _animateFrameFuncProto () {
       if (!this._animating) {
@@ -387,6 +409,7 @@ export default {
         this._updateViewport(toPos)
         this._animating = null
         this._requestedAnimation = false
+        this._transitionStart = null
         var item = this.items[this.currentSync]
         if (item) {
           this._itemReady(item, () => {
@@ -403,7 +426,7 @@ export default {
       var s = acc * time * time / 2
       var l = toPos + s
       this._updateViewport(l)
-      requestAnimationFrame(this._animateFrameFuncProto.bind(this))
+      this._animationFrame = requestAnimationFrame(this._animateFrameFuncProto.bind(this))
     },
     _animateViewport (current, source, n) {
       this._cancelViewportAnimation()
@@ -446,7 +469,7 @@ export default {
       }
       if (!this._requestedAnimation) {
         this._requestedAnimation = true
-        requestAnimationFrame(this._animateFrameFuncProto.bind(this))
+        this._animationFrame = requestAnimationFrame(this._animateFrameFuncProto.bind(this))
       }
     },
     _cancelViewportAnimation () {
@@ -519,6 +542,9 @@ export default {
       }
     },
     _handleContentTrack (e) {
+      if (this.disableTouch) {
+        return
+      }
       if (!this._invalid) {
         if (e.detail.state === 'start') {
           this.userTracking = true
@@ -570,6 +596,11 @@ export default {
     for (let index = 0, length = swiperItems.length; index < length; index++) {
       let currentSync = this.currentSync
       slidesDots.push(createElement('div', {
+        on: {
+          click: () => {
+            this._animateViewport(this.currentSync = index, this.currentChangeSource = 'click', this.circularEnabled ? 1 : 0)
+          }
+        },
         class: {
           'uni-swiper-dot': true,
           'uni-swiper-dot-active': (index < currentSync + this.displayMultipleItemsNumber && index >= currentSync) || (index < currentSync + this.displayMultipleItemsNumber - length)
@@ -599,11 +630,11 @@ export default {
     }
 
     return createElement(
-      'uni-swiper',
-      [createElement('div', {
-        ref: 'slidesWrapper',
-        'class': 'uni-swiper-wrapper',
+      'uni-swiper', {
         on: this.$listeners
+      }, [createElement('div', {
+        ref: 'slidesWrapper',
+        'class': 'uni-swiper-wrapper'
       }, slidesWrapperChild)]
     )
   }

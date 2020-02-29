@@ -12,7 +12,8 @@
 |transformPx|Boolean|true|是否转换项目的px，为true时将px转换为rpx，为false时，px为传统的实际像素||
 |networkTimeout|Object||网络超时时间，[详见](/collocation/manifest?id=networktimeout)||
 |debug|Boolean|false|是否开启 debug 模式，开启后调试信息以 ``info`` 的形式给出，其信息有页面的注册，页面路由，数据更新，事件触发等||
-|app-plus|Object||[5+App 特有配置](/collocation/manifest?id=app-plus)||
+|uniStatistics|Object||[是否开启 uni 统计，全局配置](/collocation/manifest?id=uniStatistics)|2.2.3+|
+|app-plus|Object||[App 特有配置](/collocation/manifest?id=app-plus)||
 |h5|Object||[H5 特有配置](/collocation/manifest?id=h5)||
 |quickapp|Object||快应用特有配置，即将支持||
 |mp-weixin|Object||[微信小程序特有配置](/collocation/manifest?id=mp-weixin)||
@@ -33,21 +34,35 @@
 
 |属性|类型|必填|默认值|说明|
 |--|--|--|--|--|
-|request|Number|否|6000|uni.request 的超时时间，单位毫秒。|
-|connectSocket|Number|否|6000|uni.connectSocket 的超时时间，单位毫秒。|
-|uploadFile|Number|否|6000|uni.uploadFile 的超时时间，单位毫秒。|
-|downloadFile|Number|否|6000|uni.downloadFile 的超时时间，单位毫秒。|
+|request|Number|否|60000|uni.request 的超时时间，单位毫秒。|
+|connectSocket|Number|否|60000|uni.connectSocket 的超时时间，单位毫秒。|
+|uploadFile|Number|否|60000|uni.uploadFile 的超时时间，单位毫秒。|
+|downloadFile|Number|否|60000|uni.downloadFile 的超时时间，单位毫秒。|
+
+自`HBuilderX 2.5.10`起，上述默认超时时间由6秒改为60秒，对齐微信小程序平台。
+
+
+### uniStatistics
+uni 统计配置项
+
+|属性|类型|必填|默认值|说明|
+|--|--|--|--|--|
+|enable|Boolean|是|true|是否开启uni统计|
 
 ### app-plus
 
 |属性|类型|说明|最低版本|
 |:-|:-|:-|:-|
-|splashscreen|Object|5+App 启动界面信息，[详见](/collocation/manifest?id=splashscreen)||
+|splashscreen|Object|App 启动界面信息，[详见](/collocation/manifest?id=splashscreen)||
 |modules|Object|权限模块，[详见](/collocation/manifest?id=modules)||
-|distribute|Object|5+App 发布信息，[详见](/collocation/manifest?id=distribute)||
-|usingComponents|Boolean|是否启用自定义组件模式，默认为false，[编译模式区别详情](https://ask.dcloud.net.cn/article/35843)|1.9.0|
-|nvueCompiler|String|切换 nvue 编译模式，可选值，`weex` ：老编译模式，`uni-app`： 新编译模式，默认为 `weex` 。[编译模式区别详情](http://ask.dcloud.net.cn/article/36074)|2.0.3 Alpha|
-|nvue|Object|nvue 页面布局初始配置，[详见](/collocation/manifest?id=nvue)|2.0.3 Alpha|
+|distribute|Object|App 发布信息，[详见](/collocation/manifest?id=distribute)||
+|usingComponents|Boolean|是否启用自定义组件模式，默认为false，[编译模式区别详情](https://ask.dcloud.net.cn/article/35843)|1.9.0+|
+|nvueCompiler|String|切换 nvue 编译模式，可选值，`weex` ：老编译模式，`uni-app`： 新编译模式，默认为 `weex` 。[编译模式区别详情](http://ask.dcloud.net.cn/article/36074)|2.0.3+|
+|renderer|String|可不加载基于 webview 的运行框架，减少包体积、提升启动速度。可选值 `native`| App-nvue 2.2.0+|
+|compilerVersion|Number|编译器版本，可选值：2、3 默认 2 [详见](https://ask.dcloud.net.cn/article/36599)|HBuilderX alpha 2.4.4+或HBuilderX 2.5.0+|
+|nvueLaunchMode|Number|Nvue 首页启动模式，在 compilerVersion 值为 3 时生效，可选值：normal、fast 默认 normal（HBuilderX alpha 2.4.4-2.4.9 固定为 fast） [详见](https://ask.dcloud.net.cn/article/36749)|2.5.0+|
+|nvue|Object|nvue 页面布局初始配置，[详见](/collocation/manifest?id=nvue)|2.0.3+|
+|uniStatistics|Object|[App 是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)|2.2.3+|
 
 PS：这里只列出了核心部分，更多内容请参考 [完整的 manifest.json](/collocation/manifest?id=完整-manifestjson)。
 
@@ -102,7 +117,7 @@ splash（启动封面）是App必然存在的、不可取消的。
 
 **注意**
 - 仅App云打包生效。本地打包需自行在原生工程中配置。
-- 
+
 #### App Distribute@distribute
 
 |属性|类型|描述|
@@ -132,7 +147,7 @@ splash（启动封面）是App必然存在的、不可取消的。
 
 |属性|类型|描述|
 |:-|:-|:-|
-|flex-direction|String| flex 成员项的排列方向，支持项，row：从左到右； row-reverse：从下到上；column：从上到下；column-reverse：与 row 相反，默认值 column。|
+|flex-direction|String| flex 成员项的排列方向，支持项，row：从左到右； row-reverse：从右到左；column：从上到下；column-reverse：与 column 相反，默认值 column。|
 
 
 ### h5
@@ -146,7 +161,7 @@ splash（启动封面）是App必然存在的、不可取消的。
 |publicPath|String|引用资源的地址前缀，仅发布时生效。参考：[publicPath](collocation/manifest?id=publicPath)|
 |sdkConfigs|String|SDK配置，例如地图...  参考：[sdkConfigs](collocation/manifest?id=h5sdkconfig)|
 |optimization|Object|打包优化配置（HBuilderX 2.1.5 以上支持），参考[optimization](collocation/manifest?id=optimization)|
-
+|uniStatistics|Object|[H5 是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)||
 
 #### 自定义模板@h5-template
 需要使用自定义模板的场景，通常有以下几种情况：
@@ -171,7 +186,7 @@ splash（启动封面）是App必然存在的、不可取消的。
 				document.documentElement.style.fontSize = document.documentElement.clientWidth / 20 + 'px'
 			})
 		</script>
-		<link rel="stylesheet" href="<%= BASE_URL %>static/index.css" />
+		<link rel="stylesheet" href="<%= BASE_URL %>static/index.<%= VUE_APP_INDEX_CSS_HASH %>.css" />
 	</head>
 	<body>
 		<noscript>
@@ -197,7 +212,10 @@ H5平台是SPA单页应用，普通的SEO信息即加meta字段只能在，自�
 |mode|String|hash|路由跳转模式，支持 hash、history|
 |base|String|/|应用基础路径，例如，如果整个单页应用服务在 /app/ 下，然后 base 就应该设为 "/app/"|
 
-**注意：**`history` 模式发行需要后台配置支持，详见：[history 模式的后端配置](https://router.vuejs.org/zh/guide/essentials/history-mode.html#%E5%90%8E%E7%AB%AF%E9%85%8D%E7%BD%AE%E4%BE%8B%E5%AD%90)
+**注意：**
+
+* `history` 模式部分浏览器器不支持，iOS微信内置浏览器无法观测到URL变动，默认分享（不使用微信[JSSDK](https://ask.dcloud.net.cn/article/35380)的情况下）的链接为入口页链接。
+* `history` 模式发行需要后台配置支持，详见：[history 模式的后端配置](https://router.vuejs.org/zh/guide/essentials/history-mode.html#%E5%90%8E%E7%AB%AF%E9%85%8D%E7%BD%AE%E4%BE%8B%E5%AD%90)
 
 #### async@h5-async
 |属性|类型|默认值|说明|
@@ -205,7 +223,7 @@ H5平台是SPA单页应用，普通的SEO信息即加meta字段只能在，自�
 |loading|String|AsyncLoading|页面 js 加载时使用的组件（需注册为全局组件）|
 |error|String|AsyncError|页面 js 加载失败时使用的组件（需注册为全局组件）|
 |delay|Number|200|展示 loading 加载组件的延时时间（页面 js 若在 delay 时间内加载完成，则不会显示 loading 组件）|
-|timeout|Number|3000|页面 js 加载超时时间（超时后展示 error 对应的组件）|
+|timeout|Number|60000|页面 js 加载超时时间（超时后展示 error 对应的组件）|
 
 #### devServer
 |属性|类型|默认值|说明|
@@ -281,6 +299,8 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 }
 ```
 
+Tips：关于摇树优化（treeShaking）原理及优化结果，参考：[https://ask.dcloud.net.cn/article/36279](https://ask.dcloud.net.cn/article/36279)
+
 ### mp-weixin
 
 |属性|类型|说明|
@@ -294,7 +314,10 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 |resizable|Boolean|在iPad上小程序是否支持屏幕旋转，默认关闭|
 |navigateToMiniProgramAppIdList|Array|需要跳转的小程序列表，[详见](https://developers.weixin.qq.com/miniprogram/dev/api/open-api/miniprogram-navigate/wx.navigateToMiniProgram.html)|
 |permission|Object|微信小程序接口权限相关设置，比如申请位置权限必须填此处[详见](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html)|
-|workers|String|Worker 代码放置的目录，**HBuilderX 2.0.0+ Alpha** 支持。 [详见](https://developers.weixin.qq.com/miniprogram/dev/framework/workers.html)|
+|workers|String|Worker 代码放置的目录。 [详见](https://developers.weixin.qq.com/miniprogram/dev/framework/workers.html)|
+|optimization|Object| 对微信小程序的优化配置 |
+|cloudfunctionRoot|String| 配置云开发目录，参考[setting](/collocation/manifest?id=cloudfunctionRoot)|
+|uniStatistics|Object|[微信小程序是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)||
 
 #### setting
 
@@ -307,11 +330,59 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 |postcss|Boolean|上传代码时样式是否自动补全|
 |minified|Boolean|上传代码时是否自动压缩|
 
-### mp-alipay
+#### optimization
+
+对微信小程序的优化配置
 
 |属性|类型|说明|
 |:-|:-|:-|
-|usingComponents|Boolean| 是否启用自定义组件模式，`v2.0+`，默认为false，[编译模式区别详情](https://ask.dcloud.net.cn/article/35843)|
+|subPackages|Boolean|是否开启分包优化|
+
+#### cloudfunctionRoot
+
+如果需要使用微信小程序的云开发，需要在 mp-weixin 配置云开发目录
+
+```javascript
+"mp-weixin":{
+  // ...
+   "cloudfunctionRoot": "cloudfunctions/", // 配置云开发目录
+  // ...
+}
+```
+
+配置目录之后，需要在项目根目录新建 `vue.config.js` 配置对应的文件编译规则
+
+```javascript
+
+{
+
+ plugins: [
+     new CopyWebpackPlugin([
+       {
+         from: path.join(__dirname, '../cloudfunctions'),
+         to: path.join(__dirname, 'unpackage', 'dist', process.env.NODE_ENV === 'production' ? 'build' : 'dev', process.env.UNI_PLATFORM, 'cloudfunctions'),
+       },
+     ]),
+   ],
+}
+
+```
+
+### mp-alipay
+
+|属性									|类型		|说明																																																										|
+|:-										|:-			|:-																																																											|
+|usingComponents			|Boolean| 是否启用自定义组件模式，`v2.0+`，默认为false，[编译模式区别详情](https://ask.dcloud.net.cn/article/35843)							|
+|plugins							|Object	|使用到的插件，[详见](https://opendocs.alipay.com/mini/plugin/plugin-usage)																							|
+|component2						|Boolean| 是否启用 `component2` 编译，默认为false，[查看详情](https://docs.alipay.com/mini/framework/custom-component-overview)	|
+|axmlStrictCheck			|Boolean| 是否启用 `axml` 严格语法检查，默认为false																																							|
+|enableParallelLoader	|Boolean| 是否启用多进程编译，默认为false																																												|
+|enableDistFileMinify	|Boolean| 是否压缩编译产物（仅在真机预览/真机调试时生效），默认为false																													|
+|uniStatistics				|Object	|[支付宝小程序是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)														|
+
+**注意**
+
+- 以上选项对应支付宝小程序内的`mini.project.json`，但是在支付宝小程序IDE启动的情况下中修改这个文件可能并不会生效，后续支付宝应该会修复这个问题
 
 ### mp-baidu
 
@@ -319,6 +390,18 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 |:-|:-|:-|
 |appid|String|百度小程序的 AppID，登录 [https://smartprogram.baidu.com/docs/introduction/enter_application/](https://smartprogram.baidu.com/docs/introduction/enter_application/) 申请|
 |usingComponents|Boolean| 是否启用自定义组件模式，`v2.0+`，默认为false，[编译模式区别详情](https://ask.dcloud.net.cn/article/35843)|
+|requiredBackgroundModes|Array|小程序需要在后台使用的能力，目前支持背景音频播放，"requiredBackgroundModes": ["audio"]，[详见](https://smartprogram.baidu.com/docs/develop/tutorial/process/#requiredBackgroundModes)	|
+|prefetches|Array|预请求的所有url的列表，[详见](https://smartprogram.baidu.com/docs/develop/tutorial/process/#prefetches)																|
+|optimization|Object| 对百度小程序的优化配置 |
+|uniStatistics|Object|[百度小程序是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)|
+
+#### optimization
+
+对百度小程序的优化配置
+
+|属性|类型|说明|
+|:-|:-|:-|
+|subPackages|Boolean|是否开启分包优化|
 
 ### mp-toutiao
 
@@ -326,6 +409,9 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 |:-|:-|:-|
 |appid|String|头条小程序的 AppID，登录 [https://developer.toutiao.com/](https://developer.toutiao.com/) 申请|
 |setting|Object|头条小程序项目设置，参考[头条小程序项目设置](/collocation/manifest?id=mp-toutiao-setting)|
+|usingComponents|Boolean| 是否启用自定义组件模式，`v2.0+`，默认为false，[编译模式区别详情](https://ask.dcloud.net.cn/article/35843)|
+|navigateToMiniProgramAppIdList	|Array|需要跳转的小程序列表，[详见](https://developer.toutiao.com/dev/cn/mini-app/develop/framework/basic-reference/general-configuration)	|
+|uniStatistics|Object|[头条小程序是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)|
 
 #### 头条小程序项目设置@mp-toutiao-setting
 
@@ -338,10 +424,48 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 
 ### mp-qq
 
+|属性							|类型			|说明																																												|
+|:-								|:-				|:-																																													|
+|appid							|String			|qq 小程序的 AppID，登录 [https://q.qq.com](https://q.qq.com) 申请																													|
+|requiredBackgroundModes		|Array			|小程序需要在后台使用的能力，目前支持背景音频播放，"requiredBackgroundModes": ["audio"]，[详见](https://q.qq.com/wiki/develop/miniprogram/frame/dispose.html#requiredbackgroundmodes)	|
+|navigateToMiniProgramAppIdList	|Array			|需要跳转的小程序列表，[详见](https://q.qq.com/wiki/develop/miniprogram/frame/dispose.html#navigatetominiprogramappidlist)																|
+|permission						|Object			|小程序接口权限相关设置，比如申请位置权限必须填此处[详见](https://q.qq.com/wiki/develop/miniprogram/frame/dispose.html#permission)														|
+|workers						|String			|Worker 代码放置的目录。 [详见](https://q.qq.com/wiki/develop/miniprogram/frame/dispose.html#workers)																					|
+|groupIdList					|String Array	|需要打开群资料卡的群号列表，详见button的open-type																																		|
+|optimization|Object| 对QQ小程序的优化配置 |
+|uniStatistics|Object|[QQ小程序是否开启 uni 统计，配置方法同全局配置](/collocation/manifest?id=uniStatistics)|
+
+#### optimization
+
+对QQ小程序的优化配置
+
 |属性|类型|说明|
 |:-|:-|:-|
-|appid|String|qq 小程序的 AppID，登录 [https://q.qq.com](https://q.qq.com) 申请|
+|subPackages|Boolean|是否开启分包优化|
 
+mp-qq只支持自定义组件模式，不存在usingComponents配置
+
+### 关于分包优化的说明
+
+- 在对应平台的配置下添加`"optimization":{"subPackages":true}`开启分包优化
+- 目前只支持`mp-weixin`、`mp-qq`、`mp-baidu`的分包优化
+- 分包优化具体逻辑：
+  + 静态文件：分包下支持 static 等静态资源拷贝，即分包目录内放置的静态资源不会被打包到主包中，也不可在主包中使用
+  + js文件：当某个 js 仅被一个分包引用时，该 js 会被打包到该分包内，否则仍打到主包（即被主包引用，或被超过 1 个分包引用）
+  + 自定义组件：若某个自定义组件仅被一个分包引用时，且未放入到分包内，编译时会输出提示信息
+
+**分包内静态文件示例**
+
+```
+"subPackages": [{
+	"root": "pages/sub",
+	"pages": [{
+		"path": "index/index"
+	}]
+}]
+```
+
+以上面的分包为例，放在每个分包root对应目录下的静态文件会被打包到此分包内。
 
 ### 完整 manifest.json
 
@@ -352,7 +476,11 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 	"description": "应用描述",
 	"versionName": "1.0.0",
 	"versionCode": "100",
-	// app-plus 节点是 5+App 特有配置，推荐在 HBuilderX 的 manifest.json 可视化界面操作完成配置。
+  // 是否全局关闭uni统计
+  "uniStatistics": {  
+      "enable": false//全局关闭  
+  },
+	// app-plus 节点是 App 特有配置，推荐在 HBuilderX 的 manifest.json 可视化界面操作完成配置。
 	"app-plus": {
 		// HBuilderX->manifest.json->模块权限配置
 		"modules": {
@@ -478,8 +606,7 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 				"share": {
 					// 微信分享
 					"weixin": {
-						"appid": "",
-						"appsecret": ""
+						"appid": ""
 					},
 					// 新浪微博分享
 					"sina": {
@@ -487,15 +614,9 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 						"appsecret": "",
 						"redirect_uri": ""
 					},
-					// 分享到QQ好友
+					// 分享到QQ
 					"qq": {
 						"appid": ""
-					},
-					// 腾讯微博分享
-					"tencent": {
-						"appkey": "",
-						"appsecret": "",
-						"redirect_uri": ""
 					}
 				},
 				"statics": {
@@ -508,6 +629,7 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 					}
 				}
 			},
+			// 屏幕方向 需要云打包/本地打包/自定义基座生效
 			"orientation": [
 				"portrait-primary",
 				"landscape-primary",
@@ -630,13 +752,17 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 		"softinput": {
 			"navBar": "auto", //是否显示iOS软键盘上的“完成”导航条
 			"mode": "adjustResize|adjustPan" //软键盘弹出模式，
-		}
+		},
+    "popGesture": "none" //iOS上是否支持屏幕左边滑动关闭当前页面。默认是可关闭。设为none则不响应左滑动画。
 	},
 	// 快应用特有配置
 	"quickapp": {},
 	// 微信小程序特有配置
 	"mp-weixin": {
-		"appid": "wx开头的微信小程序appid"
+		"appid": "wx开头的微信小程序appid",
+		"uniStatistics": {
+			"enable": false//仅微信小程序关闭uni统计
+		},
 	},
 	// 百度小程序特有配置
 	"mp-baidu": {
@@ -662,7 +788,7 @@ Tips：`uni-app` 中 `manifest.json->h5->devServer` 实际上对应 `webpack` �
 	}
 }
 ```
-更多配置相关的说明，请参考 [manifest.json文档说明](https://ask.dcloud.net.cn/article/94) 中的描述。可能节点的位置与普通的 5+App 有差异，请按照配置的名称进行对应。
+更多配置相关的说明，请参考 [manifest.json文档说明](https://ask.dcloud.net.cn/article/94) 中的描述。可能节点的位置与普通的 App 有差异，请按照配置的名称进行对应。
 
 # FAQ
 Q：iOS 应用调用相机等权限时，弹出的提示语如何修改？

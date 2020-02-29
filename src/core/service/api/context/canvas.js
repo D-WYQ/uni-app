@@ -1,5 +1,13 @@
 import createCallbacks from 'uni-helpers/callbacks'
-import { pixelRatio } from 'uni-helpers/hidpi'
+
+import {
+  invokeMethod,
+  getCurrentPageId
+} from '../../platform'
+
+import {
+  invoke
+} from '../../bridge'
 
 const canvasEventCallbacks = createCallbacks('canvasEvent')
 
@@ -226,10 +234,6 @@ function checkColor (e) {
   return [0, 0, 0, 255]
 }
 
-function TextMetrics (width) {
-  this.width = width
-}
-
 function Pattern (image, repetition) {
   this.image = image
   this.repetition = repetition
@@ -255,14 +259,20 @@ var methods3 = ['setFillStyle', 'setTextAlign', 'setStrokeStyle', 'setGlobalAlph
 ]
 
 var tempCanvas
-function getTempCanvas () {
+function getTempCanvas (width = 0, height = 0) {
   if (!tempCanvas) {
     tempCanvas = document.createElement('canvas')
   }
+  tempCanvas.width = width
+  tempCanvas.height = height
   return tempCanvas
 }
 
-class CanvasContext {
+function TextMetrics (width) {
+  this.width = width
+}
+
+export class CanvasContext {
   constructor (id, pageId) {
     this.id = id
     this.pageId = pageId
@@ -316,10 +326,15 @@ class CanvasContext {
       return new Pattern(image, repetition)
     }
   }
+  // TODO
   measureText (text) {
-    var c2d = getTempCanvas().getContext('2d')
-    c2d.font = this.state.font
-    return new TextMetrics(c2d.measureText(text).width || 0)
+    if (typeof document === 'object') {
+      var c2d = getTempCanvas().getContext('2d')
+      c2d.font = this.state.font
+      return new TextMetrics(c2d.measureText(text).width || 0)
+    } else {
+      return new TextMetrics(0)
+    }
   }
   save () {
     this.actions.push({
@@ -731,17 +746,13 @@ export function createCanvasContext (id, context) {
   if (context) {
     return new CanvasContext(id, context.$page.id)
   }
-  const app = getApp()
-  if (app.$route && app.$route.params.__id__) {
-    return new CanvasContext(id, app.$route.params.__id__)
+  const pageId = getCurrentPageId()
+  if (pageId) {
+    return new CanvasContext(id, pageId)
   } else {
     UniServiceJSBridge.emit('onError', 'createCanvasContext:fail')
   }
 }
-
-const {
-  invokeCallbackHandler: invoke
-} = UniServiceJSBridge
 
 export function canvasGetImageData ({
   canvasId,
@@ -750,11 +761,8 @@ export function canvasGetImageData ({
   width,
   height
 }, callbackId) {
-  var pageId
-  const app = getApp()
-  if (app.$route && app.$route.params.__id__) {
-    pageId = app.$route.params.__id__
-  } else {
+  var pageId = getCurrentPageId()
+  if (!pageId) {
     invoke(callbackId, {
       errMsg: 'canvasGetImageData:fail'
     })
@@ -784,11 +792,8 @@ export function canvasPutImageData ({
   width,
   height
 }, callbackId) {
-  var pageId
-  const app = getApp()
-  if (app.$route && app.$route.params.__id__) {
-    pageId = app.$route.params.__id__
-  } else {
+  var pageId = getCurrentPageId()
+  if (!pageId) {
     invoke(callbackId, {
       errMsg: 'canvasPutImageData:fail'
     })
@@ -808,8 +813,8 @@ export function canvasPutImageData ({
 }
 
 export function canvasToTempFilePath ({
-  x,
-  y,
+  x = 0,
+  y = 0,
   width,
   height,
   destWidth,
@@ -818,86 +823,44 @@ export function canvasToTempFilePath ({
   fileType,
   qualit
 }, callbackId) {
-  if (typeof width !== 'undefined') {
-    width *= pixelRatio
-  }
-  if (typeof height !== 'undefined') {
-    height *= pixelRatio
-  }
-  var pageId
-  const app = getApp()
-  if (app.$route && app.$route.params.__id__) {
-    pageId = app.$route.params.__id__
-  } else {
+  var pageId = getCurrentPageId()
+  if (!pageId) {
     invoke(callbackId, {
       errMsg: 'canvasToTempFilePath:fail'
     })
     return
   }
-  var cId = canvasEventCallbacks.push(function (data) {
-    var imgData = data.data
-    if (!imgData || !imgData.length) {
+  const cId = canvasEventCallbacks.push(function ({
+    base64
+  }) {
+    if (!base64 || !base64.length) {
       invoke(callbackId, {
         errMsg: 'canvasToTempFilePath:fail'
       })
-      return
     }
-    try {
-      imgData = new ImageData(new Uint8ClampedArray(imgData), data.width, data.height)
-    } catch (error) {
-      invoke(callbackId, {
-        errMsg: 'canvasToTempFilePath:fail'
-      })
-      return
-    }
-    var canvas = getTempCanvas()
-    canvas.width = data.width
-    canvas.height = data.height
-    var c2d = canvas.getContext('2d')
-    c2d.putImageData(imgData, 0, 0)
-    var base64 = canvas.toDataURL('image/png')
-    var img = new Image()
-    img.onload = function () {
-      var width = canvas.width = typeof destWidth === 'number' ? destWidth : imgData.width * pixelRatio
-      var height = canvas.height = typeof destHeight === 'number' ? destHeight : imgData.height * pixelRatio
-      if (fileType === 'jpeg') {
-        c2d.fillStyle = '#fff'
-        c2d.fillRect(0, 0, width, height)
-      }
-      c2d.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
-      base64 = canvas.toDataURL(`image/${fileType}`, qualit)
-      invoke(callbackId, {
-        errMsg: 'canvasToTempFilePath:ok',
-        tempFilePath: base64
-      })
-    }
-    img.src = base64
+    invokeMethod('base64ToTempFilePath', {
+      base64Data: base64,
+      x,
+      y,
+      width,
+      height,
+      destWidth,
+      destHeight,
+      canvasId,
+      fileType,
+      qualit
+    }, callbackId)
   })
-  operateCanvas(canvasId, pageId, 'getImageData', {
+  operateCanvas(canvasId, pageId, 'getDataUrl', {
     x,
     y,
     width,
     height,
+    destWidth,
+    destHeight,
+    hidpi: false,
+    fileType,
+    qualit,
     callbackId: cId
   })
-}
-
-export function createContext () {
-  return new CanvasContext()
-}
-
-export function drawCanvas ({
-  canvasId,
-  actions,
-  reserve
-}) {
-  const app = getApp()
-  if (app.$route && app.$route.params.__id__) {
-    operateCanvas(canvasId, app.$route.params.__id__, 'actionsChanged', {
-      actions,
-      reserve
-    })
-  } else {
-    UniServiceJSBridge.emit('onError', 'drawCanvas:fail')
-  }
 }

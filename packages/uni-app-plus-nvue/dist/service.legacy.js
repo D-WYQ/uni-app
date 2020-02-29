@@ -1,14 +1,210 @@
+const _toString = Object.prototype.toString;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 function isFn (fn) {
   return typeof fn === 'function'
 }
 
+function isPlainObject (obj) {
+  return _toString.call(obj) === '[object Object]'
+}
+
 function hasOwn (obj, key) {
   return hasOwnProperty.call(obj, key)
 }
 
-const SYNC_API_RE = /^\$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64/;
+const HOOKS = [
+  'invoke',
+  'success',
+  'fail',
+  'complete',
+  'returnValue'
+];
+
+const globalInterceptors = {};
+const scopedInterceptors = {};
+
+function mergeHook (parentVal, childVal) {
+  const res = childVal
+    ? parentVal
+      ? parentVal.concat(childVal)
+      : Array.isArray(childVal)
+        ? childVal : [childVal]
+    : parentVal;
+  return res
+    ? dedupeHooks(res)
+    : res
+}
+
+function dedupeHooks (hooks) {
+  const res = [];
+  for (let i = 0; i < hooks.length; i++) {
+    if (res.indexOf(hooks[i]) === -1) {
+      res.push(hooks[i]);
+    }
+  }
+  return res
+}
+
+function removeHook (hooks, hook) {
+  const index = hooks.indexOf(hook);
+  if (index !== -1) {
+    hooks.splice(index, 1);
+  }
+}
+
+function mergeInterceptorHook (interceptor, option) {
+  Object.keys(option).forEach(hook => {
+    if (HOOKS.indexOf(hook) !== -1 && isFn(option[hook])) {
+      interceptor[hook] = mergeHook(interceptor[hook], option[hook]);
+    }
+  });
+}
+
+function removeInterceptorHook (interceptor, option) {
+  if (!interceptor || !option) {
+    return
+  }
+  Object.keys(option).forEach(hook => {
+    if (HOOKS.indexOf(hook) !== -1 && isFn(option[hook])) {
+      removeHook(interceptor[hook], option[hook]);
+    }
+  });
+}
+
+function addInterceptor (method, option) {
+  if (typeof method === 'string' && isPlainObject(option)) {
+    mergeInterceptorHook(scopedInterceptors[method] || (scopedInterceptors[method] = {}), option);
+  } else if (isPlainObject(method)) {
+    mergeInterceptorHook(globalInterceptors, method);
+  }
+}
+
+function removeInterceptor (method, option) {
+  if (typeof method === 'string') {
+    if (isPlainObject(option)) {
+      removeInterceptorHook(scopedInterceptors[method], option);
+    } else {
+      delete scopedInterceptors[method];
+    }
+  } else if (isPlainObject(method)) {
+    removeInterceptorHook(globalInterceptors, method);
+  }
+}
+
+function wrapperHook (hook) {
+  return function (data) {
+    return hook(data) || data
+  }
+}
+
+function isPromise (obj) {
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function'
+}
+
+function queue (hooks, data) {
+  let promise = false;
+  for (let i = 0; i < hooks.length; i++) {
+    const hook = hooks[i];
+    if (promise) {
+      promise = Promise.then(wrapperHook(hook));
+    } else {
+      const res = hook(data);
+      if (isPromise(res)) {
+        promise = Promise.resolve(res);
+      }
+      if (res === false) {
+        return {
+          then () {}
+        }
+      }
+    }
+  }
+  return promise || {
+    then (callback) {
+      return callback(data)
+    }
+  }
+}
+
+function wrapperOptions (interceptor, options = {}) {
+  ['success', 'fail', 'complete'].forEach(name => {
+    if (Array.isArray(interceptor[name])) {
+      const oldCallback = options[name];
+      options[name] = function callbackInterceptor (res) {
+        queue(interceptor[name], res).then((res) => {
+          /* eslint-disable no-mixed-operators */
+          return isFn(oldCallback) && oldCallback(res) || res
+        });
+      };
+    }
+  });
+  return options
+}
+
+function wrapperReturnValue (method, returnValue) {
+  const returnValueHooks = [];
+  if (Array.isArray(globalInterceptors.returnValue)) {
+    returnValueHooks.push(...globalInterceptors.returnValue);
+  }
+  const interceptor = scopedInterceptors[method];
+  if (interceptor && Array.isArray(interceptor.returnValue)) {
+    returnValueHooks.push(...interceptor.returnValue);
+  }
+  returnValueHooks.forEach(hook => {
+    returnValue = hook(returnValue) || returnValue;
+  });
+  return returnValue
+}
+
+function getApiInterceptorHooks (method) {
+  const interceptor = Object.create(null);
+  Object.keys(globalInterceptors).forEach(hook => {
+    if (hook !== 'returnValue') {
+      interceptor[hook] = globalInterceptors[hook].slice();
+    }
+  });
+  const scopedInterceptor = scopedInterceptors[method];
+  if (scopedInterceptor) {
+    Object.keys(scopedInterceptor).forEach(hook => {
+      if (hook !== 'returnValue') {
+        interceptor[hook] = (interceptor[hook] || []).concat(scopedInterceptor[hook]);
+      }
+    });
+  }
+  return interceptor
+}
+
+function invokeApi (method, api, options, ...params) {
+  const interceptor = getApiInterceptorHooks(method);
+  if (interceptor && Object.keys(interceptor).length) {
+    if (Array.isArray(interceptor.invoke)) {
+      const res = queue(interceptor.invoke, options);
+      return res.then((options) => {
+        return api(wrapperOptions(interceptor, options), ...params)
+      })
+    } else {
+      return api(wrapperOptions(interceptor, options), ...params)
+    }
+  }
+  return api(options, ...params)
+}
+
+const promiseInterceptor = {
+  returnValue (res) {
+    if (!isPromise(res)) {
+      return res
+    }
+    return res.then(res => {
+      return res[1]
+    }).catch(res => {
+      return res[0]
+    })
+  }
+};
+
+const SYNC_API_RE =
+  /^\$|getMenuButtonBoundingClientRect|^report|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64/;
 
 const CONTEXT_API_RE = /^create|Manager$/;
 
@@ -35,8 +231,8 @@ function handlePromise (promise) {
 function shouldPromise (name) {
   if (
     isContextApi(name) ||
-        isSyncApi(name) ||
-        isCallbackApi(name)
+    isSyncApi(name) ||
+    isCallbackApi(name)
   ) {
     return false
   }
@@ -49,10 +245,10 @@ function promisify (name, api) {
   }
   return function promiseApi (options = {}, ...params) {
     if (isFn(options.success) || isFn(options.fail) || isFn(options.complete)) {
-      return api(options, ...params)
+      return wrapperReturnValue(name, invokeApi(name, api, options, ...params))
     }
-    return handlePromise(new Promise((resolve, reject) => {
-      api(Object.assign({}, options, {
+    return wrapperReturnValue(name, handlePromise(new Promise((resolve, reject) => {
+      invokeApi(name, api, Object.assign({}, options, {
         success: resolve,
         fail: reject
       }), ...params);
@@ -68,122 +264,17 @@ function promisify (name, api) {
           )
         };
       }
-    }))
+    })))
   }
 }
-
-const SUCCESS = 'success';
-const FAIL = 'fail';
-const COMPLETE = 'complete';
-const CALLBACKS = [SUCCESS, FAIL, COMPLETE];
 
 const UNIAPP_SERVICE_NVUE_ID = '__uniapp__service';
 
-function noop$1 () {
-
-}
-/**
- * 调用无参数，或仅一个参数且为 callback 的 API
- * @param {Object} vm
- * @param {Object} method
- * @param {Object} args
- * @param {Object} extras
- */
-function invokeVmMethodWithoutArgs (vm, method, args, extras) {
-  if (!vm) {
-    return
-  }
-  if (typeof args === 'undefined') {
-    return vm[method]()
-  }
-  const [, callbacks] = normalizeArgs(args, extras);
-  if (!Object.keys(callbacks).length) {
-    return vm[method]()
-  }
-  return vm[method](normalizeCallback(method, callbacks))
-}
-/**
- * 调用两个参数（第一个入参为普通参数，第二个入参为 callback） API
- * @param {Object} vm
- * @param {Object} method
- * @param {Object} args
- * @param {Object} extras
- */
-function invokeVmMethod (vm, method, args, extras) {
-  if (!vm) {
-    return
-  }
-  const [pureArgs, callbacks] = normalizeArgs(args, extras);
-  if (!Object.keys(callbacks).length) {
-    return vm[method](pureArgs)
-  }
-  return vm[method](pureArgs, normalizeCallback(method, callbacks))
-}
-
-function findRefById (id, vm) {
-  return findRefByVNode(id, vm._vnode)
-}
-
-function findRefByVNode (id, vnode) {
-  if (!id || !vnode) {
-    return
-  }
-  if (vnode.data &&
-        vnode.data.ref &&
-        vnode.data.attrs &&
-        vnode.data.attrs.id === id) {
-    return vnode.data.ref
-  }
-  const children = vnode.children;
-  if (!children) {
-    return
-  }
-  for (let i = 0, len = children.length; i < len; i++) {
-    const ref = findRefByVNode(id, children[i]);
-    if (ref) {
-      return ref
-    }
-  }
-}
-
-function normalizeArgs (args = {}, extras) {
-  const callbacks = Object.create(null);
-
-  const iterator = function iterator (name) {
-    const callback = args[name];
-    if (isFn(callback)) {
-      callbacks[name] = callback;
-      delete args[name];
-    }
-  };
-
-  CALLBACKS.forEach(iterator);
-
-  extras && extras.forEach(iterator);
-
-  return [args, callbacks]
-}
-
-function normalizeCallback (method, callbacks) {
-  return function weexCallback (ret) {
-    const type = ret.type;
-    delete ret.type;
-    const callback = callbacks[type];
-
-    if (type === SUCCESS) {
-      ret.errMsg = `${method}:ok`;
-    } else if (type === FAIL) {
-      ret.errMsg = method + ':fail' + (ret.msg ? (' ' + ret.msg) : '');
-    }
-
-    delete ret.code;
-    delete ret.msg;
-
-    isFn(callback) && callback(ret);
-
-    if (type === SUCCESS || type === FAIL) {
-      const complete = callbacks['complete'];
-      isFn(complete) && complete(ret);
+function initPostMessage (nvue) {
+  const plus = nvue.requireModule('plus');
+  return {
+    postMessage (data) {
+      plus.postMessage(data, UNIAPP_SERVICE_NVUE_ID);
     }
   }
 }
@@ -296,21 +387,14 @@ function initSubNVue (nvue, plus, BroadcastChannel) {
   }
 }
 
-function initPostMessage (nvue) {
-  const plus = nvue.requireModule('plus');
-  return {
-    postMessage (data) {
-      plus.postMessage(data, UNIAPP_SERVICE_NVUE_ID);
-    }
-  }
-}
+function noop () {}
 
 function initTitleNView (nvue) {
   const eventMaps = {
-    onNavigationBarButtonTap: noop$1,
-    onNavigationBarSearchInputChanged: noop$1,
-    onNavigationBarSearchInputConfirmed: noop$1,
-    onNavigationBarSearchInputClicked: noop$1
+    onNavigationBarButtonTap: noop,
+    onNavigationBarSearchInputChanged: noop,
+    onNavigationBarSearchInputConfirmed: noop,
+    onNavigationBarSearchInputClicked: noop
   };
   nvue.requireModule('globalEvent').addEventListener('plusMessage', e => {
     if (eventMaps[e.data.type]) {
@@ -383,6 +467,114 @@ function initEventBus (getGlobalEmitter) {
   getEmitter = getGlobalEmitter;
 }
 
+const SUCCESS = 'success';
+const FAIL = 'fail';
+const COMPLETE = 'complete';
+const CALLBACKS = [SUCCESS, FAIL, COMPLETE];
+
+/**
+ * 调用无参数，或仅一个参数且为 callback 的 API
+ * @param {Object} vm
+ * @param {Object} method
+ * @param {Object} args
+ * @param {Object} extras
+ */
+function invokeVmMethodWithoutArgs (vm, method, args, extras) {
+  if (!vm) {
+    return
+  }
+  if (typeof args === 'undefined') {
+    return vm[method]()
+  }
+  const [, callbacks] = normalizeArgs(args, extras);
+  if (!Object.keys(callbacks).length) {
+    return vm[method]()
+  }
+  return vm[method](normalizeCallback(method, callbacks))
+}
+/**
+ * 调用两个参数（第一个入参为普通参数，第二个入参为 callback） API
+ * @param {Object} vm
+ * @param {Object} method
+ * @param {Object} args
+ * @param {Object} extras
+ */
+function invokeVmMethod (vm, method, args, extras) {
+  if (!vm) {
+    return
+  }
+  const [pureArgs, callbacks] = normalizeArgs(args, extras);
+  if (!Object.keys(callbacks).length) {
+    return vm[method](pureArgs)
+  }
+  return vm[method](pureArgs, normalizeCallback(method, callbacks))
+}
+
+function findElmById (id, vm) {
+  return findRefByElm(id, vm.$el)
+}
+
+function findRefByElm (id, elm) {
+  if (!id || !elm) {
+    return
+  }
+  if (elm.attr.id === id) {
+    return elm
+  }
+  const children = elm.children;
+  if (!children) {
+    return
+  }
+  for (let i = 0, len = children.length; i < len; i++) {
+    const elm = findRefByElm(id, children[i]);
+    if (elm) {
+      return elm
+    }
+  }
+}
+
+function normalizeArgs (args = {}, extras) {
+  const callbacks = Object.create(null);
+
+  const iterator = function iterator (name) {
+    const callback = args[name];
+    if (isFn(callback)) {
+      callbacks[name] = callback;
+      delete args[name];
+    }
+  };
+
+  CALLBACKS.forEach(iterator);
+
+  extras && extras.forEach(iterator);
+
+  return [args, callbacks]
+}
+
+function normalizeCallback (method, callbacks) {
+  return function weexCallback (ret) {
+    const type = ret.type;
+    delete ret.type;
+    const callback = callbacks[type];
+
+    if (type === SUCCESS) {
+      ret.errMsg = `${method}:ok`;
+    } else if (type === FAIL) {
+      ret.errMsg = method + ':fail' + (ret.msg ? (' ' + ret.msg) : '');
+    }
+
+    delete ret.code;
+    delete ret.msg;
+
+    isFn(callback) && callback(ret);
+
+    if (type === SUCCESS || type === FAIL) {
+      const complete = callbacks['complete'];
+      isFn(complete) && complete(ret);
+    }
+  }
+}
+
 class MapContext {
   constructor (id, ctx) {
     this.id = id;
@@ -415,11 +607,14 @@ class MapContext {
 }
 
 function createMapContext (id, vm) {
-  const ref = findRefById(id, vm);
-  if (!ref) {
-    global.nativeLog('Can not find `' + id + '`', '__WARN');
+  if (!vm) {
+    return console.warn('uni.createMapContext 必须传入第二个参数，即当前 vm 对象(this)')
   }
-  return new MapContext(id, vm.$refs[ref])
+  const elm = findElmById(id, vm);
+  if (!elm) {
+    return console.warn('Can not find `' + id + '`')
+  }
+  return new MapContext(id, elm)
 }
 
 class VideoContext {
@@ -470,11 +665,14 @@ class VideoContext {
 }
 
 function createVideoContext (id, vm) {
-  const ref = findRefById(id, vm);
-  if (!ref) {
-    global.nativeLog('Can not find `' + id + '`', '__WARN');
+  if (!vm) {
+    return console.warn('uni.createVideoContext 必须传入第二个参数，即当前 vm 对象(this)')
   }
-  return new VideoContext(id, vm.$refs[ref])
+  const elm = findElmById(id, vm);
+  if (!elm) {
+    return console.warn('Can not find `' + id + '`')
+  }
+  return new VideoContext(id, elm)
 }
 
 class LivePusherContext {
@@ -541,12 +739,19 @@ class LivePusherContext {
 }
 
 function createLivePusherContext (id, vm) {
-  const ref = findRefById(id, vm);
-  if (!ref) {
-    global.nativeLog('Can not find `' + id + '`', '__WARN');
+  if (!vm) {
+    return console.warn('uni.createLivePusherContext 必须传入第二个参数，即当前 vm 对象(this)')
   }
-  return new LivePusherContext(id, vm.$refs[ref])
+  const elm = findElmById(id, vm);
+  if (!elm) {
+    return console.warn('Can not find `' + id + '`')
+  }
+  return new LivePusherContext(id, elm)
 }
+
+const interceptors = {
+  promiseInterceptor
+};
 
 
 
@@ -558,7 +763,10 @@ var apis = /*#__PURE__*/Object.freeze({
   $emit: $emit,
   createMapContext: createMapContext,
   createVideoContext: createVideoContext,
-  createLivePusherContext: createLivePusherContext
+  createLivePusherContext: createLivePusherContext,
+  interceptors: interceptors,
+  addInterceptor: addInterceptor,
+  removeInterceptor: removeInterceptor
 });
 
 function initUni (uni, nvue, plus, BroadcastChannel) {
@@ -576,6 +784,9 @@ function initUni (uni, nvue, plus, BroadcastChannel) {
   if (typeof Proxy !== 'undefined') {
     return new Proxy({}, {
       get (target, name) {
+        if (target[name]) {
+          return target[name]
+        }
         if (apis[name]) {
           return apis[name]
         }
@@ -586,6 +797,10 @@ function initUni (uni, nvue, plus, BroadcastChannel) {
           return
         }
         return promisify(name, uni[name])
+      },
+      set (target, name, value) {
+        target[name] = value;
+        return true
       }
     })
   }
@@ -609,7 +824,7 @@ let getGlobalApp;
 let getGlobalUniEmitter;
 let getGlobalCurrentPages;
 
-var index_legacy = {
+var index_legacy_old = {
   create (id, env, config) {
     return {
       initUniApp ({
@@ -637,8 +852,8 @@ var index_legacy = {
         getUniEmitter () {
           return getGlobalUniEmitter()
         },
-        getCurrentPages () {
-          return getGlobalCurrentPages()
+        getCurrentPages (returnAll) {
+          return getGlobalCurrentPages(returnAll)
         }
       }
     }
@@ -653,4 +868,4 @@ var index_legacy = {
   }
 };
 
-export default index_legacy;
+export default index_legacy_old;

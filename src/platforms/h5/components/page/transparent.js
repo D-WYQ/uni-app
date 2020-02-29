@@ -52,6 +52,20 @@ export default {
           borderRadiusElemStyle.backgroundColor = `rgba(${rgba})`
         })
       })
+    } else if (this.type === 'float') {
+      const iconElems = this.$el.querySelectorAll('.uni-btn-icon')
+      const iconElemsStyles = []
+      for (let i = 0; i < iconElems.length; i++) {
+        iconElemsStyles.push(iconElems[i].style)
+      }
+      const borderRadiusElems = this.$el.querySelectorAll('.uni-page-head-btn')
+      const oldColors = []
+      const borderRadiusElemsStyles = []
+      for (let i = 0; i < borderRadiusElems.length; i++) {
+        let borderRadiusElem = borderRadiusElems[i]
+        oldColors.push(getComputedStyle(borderRadiusElem).backgroundColor)
+        borderRadiusElemsStyles.push(borderRadiusElem.style)
+      }
     }
   },
   computed: {

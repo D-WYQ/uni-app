@@ -10,14 +10,43 @@
 
 如果你已经是 weex 的开发者，具有 weex 的填坑能力，那么 nvue 是你的更优选择，能切实提升你的开发效率，降低成本。
 
+如果你不开发App，那么你不太需要nvue。
+
 如果你是web前端，不熟悉 weex，那么建议你仍然以使用 vue 为主，在App端某些 vue 表现不佳的场景下使用 nvue 作为强化补充：
 - 左右拖动的长列表。在webview里，通过swiper+scroll-view实现左右拖动的长列表，前端模拟下拉刷新，这套方案的性能不好。此时推荐使用nvue，比如新建uni-app项目时的新闻示例模板，就是首页采用了nvue
-- 为了解决 vue 页面的原生控件层级问题和原生导航栏的灵活自定义问题，uni-app 还提供了 subnvue 方案，将一个非全屏的 nvue 页面覆盖到 vue 页面上，[详见](https://ask.dcloud.net.cn/article/35948)
+- 如需要将软键盘右下角按钮文字改为“发送”，则需要使用nvue
+- 前端控件无法覆盖原生控件的问题。在nvue下，都是原生控件，覆盖map、video等不需要cover-view（如需要发布到小程序，仍然推荐写cover-view）
+- 同样因为层级问题得到解决，nvue可以实现video内嵌到swiper中，以实现抖音式视频滑动切换，例子见[插件市场](https://ext.dcloud.net.cn/plugin?id=664)；nvue的视频全屏后，仍然可以通过cover-view实现内容覆盖，比如增加文字标题、分享按钮。
+- nvue下有live-pusher组件，和小程序对齐。而vue页面下使用直播，需在条件编译里单独调用plus.video的API。
+- App端nvue文件的map和小程序拉齐度更高。vue里的map则与plus.map功能一致，和小程序的地图略有差异。
+- App端实现粘性布局，比如滚动吸顶，则nvue才能保证高性能，例子见[插件市场](https://ext.dcloud.net.cn/plugin?id=715)
 
+此外，App端，vue页面上也可以覆盖subnvue（一种非全屏的nvue页面覆盖在webview上），以解决App上的原生控件层级问题。[详见](https://ask.dcloud.net.cn/article/35948)
 
-## 编译模式差异
+## 项目渲染模式
+uni-app在App端，支持vue页面和nvue页面混搭、互相跳转。也支持纯nvue项目。
 
-uni-app 深度改进了 weex，提供了2种编译模式，一种是常规的 weex 组件模式，即编写`<div>`。另一种是 uni-app 组件模式，即编写`<view>`。后者更提供了编译为小程序和H5的能力。
+在manifest.json源码视图的`"app-plus"`下配置`"renderer":"native"`，即代表App端启用纯原生渲染模式。此时pages.json注册的vue页面将被忽略，vue组件中的代码也需覆盖nvue规范，并会被原生渲染。
+
+启动纯原生渲染，可以减少App端的包体积、加快App启动速度。因为webview渲染模式的相关模块将被移除。
+
+如果不指定该值，默认是不启动纯原生渲染的。
+
+```json
+// manifest.json    
+{    
+    // ...    
+     /* App平台特有配置 */    
+    "app-plus": {    
+        "renderer": "native", //App端纯原生渲染模式
+    }    
+}   
+
+```
+
+## nvue页面编译模式差异
+
+uni-app 深度改进了 weex，提供了2种编译模式，一种是常规的 weex 组件模式，即编写`<div>`。另一种是 uni-app 组件模式，即编写`<view>`。后者更提供了编译为小程序和H5的能力，实现了全端输出。
 
 也可以理解为uni-app做了一个原生渲染的小程序引擎。
 
@@ -31,7 +60,7 @@ uni-app 深度改进了 weex，提供了2种编译模式，一种是常规的 we
 |全局样式	|手动引入							|app.vue的样式即为全局样式			|
 |页面滚动	|必须给页面套<list>或<scroller>组件	|默认支持页面滚动					|
 
-修改2种编译模式的在 manifest.json 中，`manifest.json` -> `app-plus` -> `nvueCompiler` 切换编译模式。
+在 manifest.json 中修改2种编译模式，`manifest.json` -> `app-plus` -> `nvueCompiler` 切换编译模式。
 
 `nvueCompiler` 有两个值：
 - weex
@@ -50,30 +79,28 @@ uni-app 深度改进了 weex，提供了2种编译模式，一种是常规的 we
 ```
 
 * 如果没有在manifest里明确配置，默认是weex模式。这是为了向下兼容。
-* 当前uni-app编译模式组件还不够完整，详细列表见 [https://ask.dcloud.net.cn/article/36074](https://ask.dcloud.net.cn/article/36074)，但已经可满足常用场景。比如左右拖动的长列表场景推荐使用uni-app编译模式的nvue，其他页面仍然可使用 vue 页面。新建uni-app项目选模板`新闻/资讯模板`，这是一个nvue页面可编译到全平台的示例。
 
 ## 快速上手
 
 ### 1. 新建 nvue 页面
 
-在 ``uni-app`` 项目中，选中文件或文件夹，鼠标右击选择新建 ``nvue`` 文件输入文件名创建。
+在HBuilderX的 ``uni-app`` 项目中，新建页面，弹出界面右上角可以选择是建立vue页面还是nvue页面，或者2个同时建。
 
-不管是vue页面还是nvue页面，都需要在pages.json中注册。
+不管是vue页面还是nvue页面，都需要在pages.json中注册。如果在HBuilderX中新建页面是会自动注册的，如果使用其他编辑器，则需要自行在pages.json里注册。
 
-如果一个页面路由下同时有vue页面和nvue页面，那么在App端，会优先使用nvue页面。
+如果一个页面路由下同时有vue页面和nvue页面，即出现同名的vue和nvue文件。那么在App端，会优先使用nvue页面，同名的vue文件将不会被编译到App端。而在非App端，会优先使用vue页面。
 
-在非app端，只有uni-app编译模式的nvue才会编译。
+如果不同名，只有nvue页面，则在非app端，只有uni-app编译模式的nvue文件才会编译。
 
-![](https://img-cdn-qiniu.dcloud.net.cn/uniapp/doc/created-nvue.png)
 
 ### 2. 开发 nvue 页面
 
 ``nvue`` 页面结构同 ``vue``, 由 template、style、script 构成。
-* template： 模板写法、数据绑定同 ``vue``。组件支持2种模式，1、 ``weex`` 组件，参考：[weex 内置组件](https://weex.apache.org/zh/docs/components/a.html)；2、``uni-app``组件，参考：[nvue中支持的uni-app组件](https://ask.dcloud.net.cn/article/36074)
+* template： 模板写法、数据绑定同 ``vue``。组件支持2种模式，1、 ``weex`` 组件，同weex写法，参考：[weex 内置组件](https://weex.apache.org/zh/docs/components/a.html)；2、``uni-app``组件，同uni-app写法。部分组件还未在nvue下实现，具体见：[nvue中还未支持的uni-app组件](https://ask.dcloud.net.cn/article/36074)
 * style：由于采用原生渲染，**并非所有浏览器的 css 均支持，布局模型只支持 flex 布局**，虽然不会造成某些界面布局无法实现，但写法要注意。详见：[weex 样式](https://weex.apache.org/cn/wiki/common-styles.html)
-* script：写法同 ``vue``，并支持3种API
-	- weex API ：使用前需先引入对应模块，参考：[weex 内置模块](http://weex-project.io/cn/references/modules/index.html)
-	- uni API：nvue可以使用部分 uni API，详细支持列表请参照：[nvue 里可使用的 uni-app API](/use-weex?id=nvue-里可使用的-uni-app-api)
+* script：写法同 ``vue``，并支持3种API：
+	- weex API ：使用前需先引入对应模块，参考：[weex 模块引入](https://weex.apache.org/zh/docs/api/weex-variable.html#requiremodule)
+	- uni API：nvue可以使用大部分 uni API，个别API不支持，不支持列表请参照：[nvue 里还未支持的 uni-app API](/use-weex?id=nvue-里可使用的-uni-app-api)
 	- plus API：在自定义组件编译模式下，nvue里可直接使用plus API
 
 
@@ -118,12 +145,12 @@ uni-app 深度改进了 weex，提供了2种编译模式，一种是常规的 we
 
 ### 3. 调试 nvue 页面
 
-HBuilderX内置了更好用的weex/uni-app调试工具，[详见](https://uniapp.dcloud.io/snippet?id=%e5%85%b3%e4%ba%8e-app-%e7%9a%84%e8%b0%83%e8%af%95)
+HBuilderX内置了更好用的weex/uni-app调试工具，包括审查界面元素、看log、debug打断点，[详见](https://uniapp.dcloud.io/snippet?id=%e5%85%b3%e4%ba%8e-app-%e7%9a%84%e8%b0%83%e8%af%95)
 
 
-## 生命周期
+## weex 生命周期
 
-``nvue `` 的 uni-app 编译模式的生命周期同普通vue页面。而 weex 编译模式，即普通 weex 生命周期函数如下：
+``nvue `` 的 uni-app 编译模式的生命周期同普通vue页面，[参考](https://uniapp.dcloud.io/collocation/frame/lifecycle)。而 weex 编译模式，生命周期函数同weex，具体如下：
 
 |Vue 生命周期钩子|说明|
 |---|---|
@@ -149,6 +176,30 @@ nvue 的页面跳转，与 weex 不同，仍然遵循 uni-app 的路由模型。
 ## nvue 和 vue 相互通讯
 
 在 uni-app 中，nvue 和 vue 页面可以混搭使用。
+
+推荐使用`uni.$on`,`uni.$emit`的方式进行页面通讯，旧的通讯方式（下面的`uni.postMessage`及`plus.webview.postMessageToUniNView`）不再推荐使用。
+
+**通讯实现方式**
+
+```
+// 接收信息的页面
+// $on(eventName, callback)  
+uni.$on('page-popup', (data) => {  
+    console.log('标题：' + data.title)
+    console.log('内容：' + data.content)
+})  
+
+// 发送信息的页面
+// $emit(eventName, data)  
+uni.$emit('page-popup', {  
+    title: '我是title',  
+    content: '我是content'  
+});
+
+```
+
+
+**使用此页面通讯时注意事项：要在页面卸载前，使用 uni.$off 移除事件监听器。**[参考](https://uniapp.dcloud.io/collocation/frame/communication?id=off)
 
 ### nvue 向 vue 通讯
 
@@ -265,13 +316,25 @@ globalEvent.addEventListener("plusMessage", e => {
 
 ## vue 和 nvue 共享的变量和数据
 除了通信事件，vue 和 nvue 页面之间还可以共享变量和存储。
-但注意nvue不支持vuex，uni-app提供的共享变量和数据的方案如下：
+uni-app提供的共享变量和数据的方案如下：
 
-1. uni.storage
+
+**1. vuex:**
+
+自```HBuilderX 2.2.5```起，nvue支持vuex
+
+**注意：**
+- 不支持直接引入`store`使用，可以使用`mapState`、`mapGetters`、`mapMutations`等辅助方法或者使用`this.$store`
+- 暂时只支持`uni-app`编译模式，不支持`weex`编译模式
+- `renderer:native`时也可以使用`vuex`
+
+**2. uni.storage:**
+
 vue和nvue页面可以使用相同的`uni.storage`存储。这个存储是持久化的。
 比如登陆状态可以保存在这里。
 
-2. globalData
+**3. globalData:**
+
 小程序有globalData机制，这套机制在uni-app里也可以使用，全端通用。
 在`App.vue`文件里定义globalData，如下：
 ```html
@@ -336,17 +399,21 @@ npm i weex-ui -S
 
 Tis:
 * 插件市场有一个集成好 weex ui 的示例，可以直接查看[https://ext.dcloud.net.cn/plugin?id=442](https://ext.dcloud.net.cn/plugin?id=442)
+* 官方的uni ui库，已经支持了nvue，需要使用uni-app编译模式。详见：[https://github.com/dcloudio/uni-ui/tree/nvue-uni-ui](https://github.com/dcloudio/uni-ui/tree/nvue-uni-ui)
 
 ## nvue 里使用 BindingX
 
 ``uni-app`` 内置了 [BindingX](https://alibaba.github.io/bindingx/)，可在 ``nvue`` 中使用 BindingX 完成复杂的动画效果。
 
-* 使用方式可参考 [BindingX 快速开始](https://alibaba.github.io/bindingx/guide/cn_guide_start)，demo示例可参考 [BindingX 示例](https://alibaba.github.io/bindingx/demos) 里 ``vue`` 的相关示例，将实验田里的 ``vue`` 代码拷贝到 ``nvue`` 文件里即可。
-* 若引入 weex-bindingx 时发现不生效，检查项目路径，路径不能含有中文。
+* 从HBuilderX 2.3.4起，`uni-app` 编译模式可直接引用`uni.requireNativePlugin('bindingx')`模块，`weex` 模式还需使用 npm 方式引用。查看如何修改 [nvue 编译模式](https://ask.dcloud.net.cn/article/36074)
+* 2.3.4以前，需要通过npm的方式安装BindingX的库到项目下。使用方式可参考 [BindingX 快速开始](https://alibaba.github.io/bindingx/guide/cn_guide_start)。若引入 weex-bindingx 时发现不生效，检查项目路径，路径不能含有中文。使用npm时如果命令行报错，需要注意看命令行的提示
+* 
+* BindingX demo示例可参考 [BindingX 示例](https://alibaba.github.io/bindingx/demos) 里 ``vue`` 的相关示例，将实验田里的 ``vue`` 代码拷贝到 ``nvue`` 文件里即可。
 
 **代码示例**
 
 ```html
+
 <template>
 	<div class="container">
 		<div ref="b1" class="btn" style="background-color:#6A1B9A" @click="clickBtn">
@@ -364,7 +431,7 @@ Tis:
 	</div>
 </template>
 <script>
-	import Binding from 'weex-bindingx';
+	const Binding = uni.requireNativePlugin('bindingx');
 	module.exports = {
 		data: {
 			isExpanded: false
@@ -384,49 +451,48 @@ Tis:
 				let b1 = this.getEl(this.$refs.b1);
 				let b2 = this.getEl(this.$refs.b2);
 				let b3 = this.getEl(this.$refs.b3);
-				Binding.bind({
+				let main_binding = Binding.bind({
 					eventType: 'timing',
-					exitExpression: {
-						origin: 't>800'
-					},
+					exitExpression: 't>800',
 					props: [{
-							element: main_image,
-							property: 'transform.rotateZ',
-							expression: {
-								origin: 'easeOutQuint(t,45,0-45,800)'
-							}
-						},{
-							element: main_btn,
-							property: 'background-color',
-							expression: {
-								origin: "evaluateColor('#607D8B','#ff0000',min(t,800)/800)"
-							}
-						}]
+						element: main_image,
+						property: 'transform.rotateZ',
+						expression: 'easeOutQuint(t,45,0-45,800)'
+
+					}, {
+						element: main_btn,
+						property: 'background-color',
+						expression: "evaluateColor('#607D8B','#ff0000',min(t,800)/800)"
+					}]
+				}, function(res) {
+					if (res.state === 'exit') {
+						Binding.unbind({
+							token: main_binding
+						})
+					}
 				});
-				Binding.bind({
+				let btn_binding = Binding.bind({
 					eventType: 'timing',
-					exitExpression: {
-						origin: 't>800'
-					},
+					exitExpression: 't>800',
 					props: [{
-							element: b1,
-							property: 'transform.translateY',
-							expression: {
-								origin: "easeOutQuint(t,-150,150,800)"
-							}
-						},{
-							element: b2,
-							property: 'transform.translateY',
-							expression: {
-								origin: "t<=100?0:easeOutQuint(t-100,-300,300,700)"
-							}
-						},{
-							element: b3,
-							property: 'transform.translateY',
-							expression: {
-								origin: "t<=200?0:easeOutQuint(t-200,-450,450,600)"
-							}
-						}]
+						element: b1,
+						property: 'transform.translateY',
+						expression: "easeOutQuint(t,-150,150,800)"
+					}, {
+						element: b2,
+						property: 'transform.translateY',
+						expression: "t<=100?0:easeOutQuint(t-100,-300,300,700)"
+					}, {
+						element: b3,
+						property: 'transform.translateY',
+						expression: "t<=200?0:easeOutQuint(t-200,-450,450,600)"
+					}]
+				}, function(res) {
+					if (res.state === 'exit') {
+						Binding.unbind({
+							token: btn_binding
+						})
+					}
 				})
 			},
 			expand: function() {
@@ -435,49 +501,47 @@ Tis:
 				let b1 = this.getEl(this.$refs.b1);
 				let b2 = this.getEl(this.$refs.b2);
 				let b3 = this.getEl(this.$refs.b3);
-				Binding.bind({
+				let main_binding = Binding.bind({
 					eventType: 'timing',
-					exitExpression: {
-						origin: 't>100'
-					},
+					exitExpression: 't>100',
 					props: [{
-							element: main_image,
-							property: 'transform.rotateZ',
-							expression: {
-								origin: 'linear(t,0,45,100)'
-							}
-						},{
-							element: main_btn,
-							property: 'background-color',
-							expression: {
-								origin: "evaluateColor('#ff0000','#607D8B',min(t,100)/100)"
-							}
-						}]
+						element: main_image,
+						property: 'transform.rotateZ',
+						expression: 'linear(t,0,45,100)'
+					}, {
+						element: main_btn,
+						property: 'background-color',
+						expression: "evaluateColor('#ff0000','#607D8B',min(t,100)/100)"
+					}]
+				}, function(res) {
+					if (res.state === 'exit') {
+						Binding.unbind({
+							token: main_binding
+						})
+					}
 				});
-				Binding.bind({
+				let btn_binding = Binding.bind({
 					eventType: 'timing',
-					exitExpression: {
-						origin: 't>800'
-					},
+					exitExpression: 't>800',
 					props: [{
-							element: b1,
-							property: 'transform.translateY',
-							expression: {
-								origin: "easeOutBounce(t,0,0-150,800)"
-							}
-						}, {
-							element: b2,
-							property: 'transform.translateY',
-							expression: {
-								origin: "t<=100?0:easeOutBounce(t-100,0,0-300,700)"
-							}
-						}, {
-							element: b3,
-							property: 'transform.translateY',
-							expression: {
-								origin: "t<=200?0:easeOutBounce(t-200,0,0-450,600)"
-							}
-						}]
+						element: b1,
+						property: 'transform.translateY',
+						expression: "easeOutBounce(t,0,0-150,800)"
+					}, {
+						element: b2,
+						property: 'transform.translateY',
+						expression: "t<=100?0:easeOutBounce(t-100,0,0-300,700)"
+					}, {
+						element: b3,
+						property: 'transform.translateY',
+						expression: "t<=200?0:easeOutBounce(t-200,0,0-450,600)"
+					}]
+				}, function(res) {
+					if (res.state === 'exit') {
+						Binding.unbind({
+							token: btn_binding
+						})
+					}
 				})
 			},
 			clickBtn: function(e) {
@@ -492,12 +556,39 @@ Tis:
 	}
 </script>
 <style>
-	.container {flex: 1;}
-	.image {width: 60px;height: 60px;}
-	.text {color: #ffffff;font-size: 30px;}
-	.btn {width: 100px;height: 100px;background-color: #ff0000;align-items: center;justify-content: center;position: absolute;border-radius: 50px;bottom: 25px;right: 25px;}
+	.container {
+		flex: 1;
+	}
+
+	.image {
+		width: 60px;
+		height: 60px;
+	}
+
+	.text {
+		color: #ffffff;
+		font-size: 30px;
+	}
+
+	.btn {
+		width: 100px;
+		height: 100px;
+		background-color: #ff0000;
+		align-items: center;
+		justify-content: center;
+		position: absolute;
+		border-radius: 50px;
+		bottom: 25px;
+		right: 25px;
+	}
 </style>
+
 ```
+
+**注意**
+
+- 推荐`bindingx`引入方式`uni.requireNativePlugin('bindingx')`
+- 暂时不要在`expression`内使用`origin`
 
 ## nvue 里使用 HTML5Plus API
 
@@ -555,26 +646,8 @@ App.vue
 </script>
 ```
 
-## nvue 里可使用的 uni-app API
+## nvue 里不支持的 uni-app API
 `nvue` 支持大部分 uni-app API ，下面只列举目前还不支持的 API 。
-
-**地图**
-
-|API|说明|
-|:-|:-|
-|uni.createMapContext()|创建并返回 map 上下文|
-
-**视频**
-
-|API|说明|
-|:-|:-|
-|uni.createVideoContext()|创建并返回 video 上下文|
-
-**直播推流**
-
-|API|说明|
-|:-|:-|
-|uni.createLivePusherContext()|创建并返回 livePusher 上下文|
 
 **动画**
 
@@ -590,26 +663,7 @@ App.vue
 
 **绘画**
 
-|API|说明|
-|:-|:-|
-|uni.createCanvasContext()|创建 canvas 绘图上下文|
-|uni.canvasToTempFilePath()|把当前画布指定区域的内容导出生成指定大小的图片，并返回文件路径|
-|uni.canvasGetImageData()|返回一个数组，用来描述 canvas 区域隐含的像素数据|
-|uni.canvasPutImageData()|将像素数据绘制到画布的方法|
-
-**下拉刷新**
-
-|API|说明|
-|:-|:-|
-|uni.onPullDownRefresh()|监听该页面用户下拉刷新事件|
-|uni.startPullDownRefresh()|开始下拉刷新|
-|uni.stopPullDownRefresh()|停止当前页面下拉刷新|
-
-**节点信息**
-
-|API|说明|
-|:-|:-|
-|uni.createSelectorQuery()|返回一个 SelectorQuery 对象实例|
+canvas API使用，详见canvas文档。
 
 **节点布局交互**
 
@@ -710,13 +764,32 @@ export default {
 
 但仍然还有一些区别需要注意：
 
-- nvue 页面只能使用 flex 布局，不支持其他布局方式。需要注意的是 weex 的 flex 默认为竖向排列，即 ``flex-direction: column``，这与 html 的 flex 默认为横向排列不同。在 nvue 编译为 uni-app模式时，纠正了这个问题，flex 方向默认改为横向排列。
-- weex 下，页面内容高过屏幕高度并不会自动滚动，它没有页面滚动的概念，只有区域滚动，要滚得内容需要套在<scroller>组件下。在 nvue 编译为 uni-app模式时，纠正了这个问题，页面内容过高会自动滚动。
+- nvue 页面只能使用 flex 布局，不支持其他布局方式。
+- weex 下，页面内容高过屏幕高度并不会自动滚动，它没有页面滚动的概念，只有部分组件可滚动（list、waterfall、scroll-view/scroller），要滚得内容需要套在可滚动组件下。这不符合前端开发的习惯，所以在 nvue 编译为 uni-app模式时，给页面外层自动套了一个 scroller，页面内容过高会自动滚动。（组件不会套，页面有recycle-list时也不会套）。后续会提供配置，可以设置不自动套。
 - weex 下，px是与屏幕宽度相关的动态单位，750px代表成屏幕宽度100%，它的静态单位是wx。在 nvue 编译为 uni-app模式时，纠正了这个问题，rpx是与屏幕宽度相关的动态单位，px是静态单位。
 - 页面开发前，首先想清楚这个页面的纵向内容有什么，哪些是要滚动的，然后每个纵向内容的横轴排布有什么，按 flex 布局设计好界面。
-- 文字内容，必须、只能在<text>组件下。不能在<div>的text里写文字。
+- 文字内容，必须、只能在`<text>`组件下。不能在`<div>`、`<view>`的text区域里直接写文字。否则即使渲染了，也无法绑定js里的变量。
 - 支持的css有限，不过并不影响布局出你需要的界面，flex还是非常强大的。[详见](https://weex.apache.org/zh/docs/styles/common-styles.html#%E7%9B%92%E6%A8%A1%E5%9E%8B)
+- 不支持背景图。但可以使用image组件和层级来实现类似web中的背景效果。因为原生开发本身也没有web这种背景图概念
+- css选择器支持的比较少，没有web丰富。详见weex的样式文档
 - class 进行绑定时只支持数组语法。
+- nvue页面没有bounce回弹效果，只有几个列表组件有bounce效果，包括 list、recycle-list、waterfall。
+- Android端在一个页面内使用大量圆角边框会造成性能问题，尤其是多个角的样式还不一样。应避免这类使用。
+
+## Android平台阴影(box-shadow)问题
+
+Android平台weex对阴影样式(`box-shadow`)支持不完善，如设置圆角边框时阴影样式显示不正常、设置动画时在`Android7`上显示不正常等。为解决这些问题，从HBuilderX 2.4.7起，新增`elevation`属性（组件的属性，不是css样式）设置组件的层级，`Number`类型，层级值越大阴影越明显，阴影效果也与组件位置有关，越靠近页面底部阴影效果越明显
+
+**用法**
+
+```html
+<view elevation="5px"></view>
+```
+
+**注意**
+
+- 为了避免`elevation`属性的阴影效果与阴影样式(`box-shadow`)冲突，设置`elevation`属性后`box-shadow`样式失效
+- 使用`elevation`需要阴影元素的父元素大于阴影范围，否则会对阴影进行裁剪
 
 ## 单位说明
 - weex的css单位支持如下：
@@ -727,10 +800,8 @@ export default {
 ## 注意事项
 - 现阶段 nvue 的定位是 vue 的补充。在 App 平台实现一些 vue 上无法实现或性能有问题的场景。
 - nvue 的各组件在安卓端默认是透明的，如果不设置background-color，可能会导致出现重影的问题。
-- 在 App.vue 中定义的全局js变量不会在 nvue 页面生效。globalData是生效的。
-- nvue 不支持 vue 里的 vuex
+- 在 App.vue 中定义的全局js变量不会在 nvue 页面生效。globalData和vuex是生效的。
 - nvue 切换横竖屏时可能导致样式出现问题，建议有 nvue 的页面锁定手机方向。
-- 不能在 style 中引入字体文件，nvue 中字体图标的使用参考：[weex 加载自定义字体](https://weex.apache.org/zh/docs/modules/dom.html#addrule)。
+- 不能在 style 中引入字体文件，nvue 中字体图标的使用参考：[weex 加载自定义字体](https://weex.apache.org/zh/docs/modules/dom.html#addrule)。如果是本地字体，可以用plus.io的API转换路径。
 - 目前不支持在 nvue 页面使用 typescript/ts。
-- HBuilderX 1.9.8以前，nvue 不支持运行在Android三方模拟器上。HBuilderX 2.1以前，nvue不支持less等css预编译器。
 - nvue 页面 ``titleNview`` 设为 ``false``时，想要模拟状态栏，可以参考：[https://ask.dcloud.net.cn/article/35111](https://ask.dcloud.net.cn/article/35111)。

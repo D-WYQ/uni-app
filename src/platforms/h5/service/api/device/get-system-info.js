@@ -1,26 +1,27 @@
 import getWindowOffset from 'uni-platform/helpers/get-window-offset'
+import safeAreaInsets from 'safe-area-insets'
 
 const ua = navigator.userAgent
 /**
  * 是否安卓设备
  */
-export const isAndroid = /android/i.test(ua)
+const isAndroid = /android/i.test(ua)
 /**
  * 是否iOS设备
  */
-export const isIOS = /iphone|ipad|ipod/i.test(ua)
+const isIOS = /iphone|ipad|ipod/i.test(ua)
 /**
  * 获取系统信息-同步
  */
 export function getSystemInfoSync () {
-  var windowWidth = window.innerWidth
-  var windowHeight = window.innerHeight
   var screen = window.screen
   var pixelRatio = window.devicePixelRatio
   var screenWidth = screen.width
   var screenHeight = screen.height
+  var windowWidth = Math.min(window.innerWidth, document.documentElement.clientWidth, screenWidth)
+  var windowHeight = window.innerHeight
   var language = navigator.language
-  var statusBarHeight = 0
+  var statusBarHeight = safeAreaInsets.top
   var osname
   var osversion
   var model
@@ -71,6 +72,14 @@ export function getSystemInfoSync () {
 
   var system = `${osname} ${osversion}`
   var platform = osname.toLocaleLowerCase()
+  var safeArea = {
+    left: safeAreaInsets.left,
+    right: windowWidth - safeAreaInsets.right,
+    top: safeAreaInsets.top,
+    bottom: windowHeight - safeAreaInsets.bottom,
+    width: windowWidth - safeAreaInsets.left - safeAreaInsets.right,
+    height: windowHeight - safeAreaInsets.top - safeAreaInsets.bottom
+  }
 
   const {
     top: windowTop,
@@ -92,7 +101,14 @@ export function getSystemInfoSync () {
     statusBarHeight,
     system,
     platform,
-    model
+    model,
+    safeArea,
+    safeAreaInsets: {
+      top: safeAreaInsets.top,
+      right: safeAreaInsets.right,
+      bottom: safeAreaInsets.bottom,
+      left: safeAreaInsets.left
+    }
   }
 }
 /**

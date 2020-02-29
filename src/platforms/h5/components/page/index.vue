@@ -1,7 +1,7 @@
 <template>
   <uni-page :data-page="$route.meta.pagePath">
     <page-head
-      v-if="showNavigationBar"
+      v-if="navigationBar.type!=='none'"
       v-bind="navigationBar" />
     <page-refresh
       v-if="enablePullDownRefresh"
@@ -22,16 +22,16 @@
   </uni-page>
 </template>
 <style>
-    uni-page {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
+  uni-page {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
 </style>
 <script>
 import {
   upx2px
-} from 'uni-helpers'
+} from 'uni-helpers/index'
 
 import {
   NAVBAR_HEIGHT
@@ -46,6 +46,8 @@ import PageBody from './pageBody'
 import PageRefresh from './pageRefresh'
 
 import pullToRefresh from './pull-to-refresh'
+
+import safeAreaInsets from 'safe-area-insets'
 
 export default {
   name: 'Page',
@@ -124,28 +126,60 @@ export default {
       default: false
     },
     titleNView: {
-      type: [Boolean, Object],
-      default: true
+      type: [Boolean, Object, String],
+      default: ''
     },
     pullToRefresh: {
       type: Object,
       default () {
         return {}
       }
+    },
+    titleImage: {
+      type: String,
+      default: ''
+    },
+    transparentTitle: {
+      type: String,
+      default: ''
+    },
+    titlePenetrate: {
+      type: String,
+      default: 'NO'
     }
   },
   data () {
+    const titleNViewTypeList = {
+      'none': 'default',
+      'auto': 'transparent',
+      'always': 'float'
+    }
+    // 将 navigationStyle 和 transparentTitle 都合并到 titleNView
+    let titleNView = this.titleNView
+    titleNView = Object.assign({}, {
+      type: this.navigationStyle === 'custom' ? 'none' : 'default'
+    }, this.transparentTitle in titleNViewTypeList ? {
+      type: titleNViewTypeList[this.transparentTitle]
+    } : null, typeof titleNView === 'object' ? titleNView : (typeof titleNView === 'boolean' ? {
+      type: titleNView ? 'default' : 'none'
+    } : null))
+
+    const yesNoParseList = {
+      'YES': true,
+      'NO': false
+    }
+
     const navigationBar = mergeTitleNView({
       loading: false,
       backButton: !this.isQuit && !this.$route.meta.isQuit, // redirectTo,reLaunch时可能动态修改 meta.isQuit
       backgroundColor: this.navigationBarBackgroundColor,
       textColor: this.navigationBarTextStyle === 'black' ? '#000' : '#fff',
       titleText: this.navigationBarTitleText,
+      titleImage: this.titleImage,
       duration: '0',
-      timingFunc: ''
-    }, this.titleNView)
-
-    const showNavigationBar = this.navigationStyle === 'default' && this.titleNView
+      timingFunc: '',
+      titlePenetrate: yesNoParseList[this.titlePenetrate]
+    }, titleNView)
 
     const refreshOptions = Object.assign({
       support: true,
@@ -158,10 +192,8 @@ export default {
 
     let offset = upx2px(refreshOptions.offset)
 
-    if (showNavigationBar) {
-      if (!(this.titleNView && this.titleNView.type === 'transparent')) {
-        offset += NAVBAR_HEIGHT
-      }
+    if (titleNView.type !== 'none' && titleNView.type !== 'transparent') {
+      offset += NAVBAR_HEIGHT + safeAreaInsets.top
     }
 
     refreshOptions.offset = offset
@@ -169,14 +201,25 @@ export default {
     refreshOptions.range = upx2px(refreshOptions.range)
 
     return {
-      showNavigationBar,
       navigationBar,
       refreshOptions
     }
   },
   created () {
     if (__PLATFORM__ === 'h5') {
-      document.title = this.navigationBar.titleText
+      const navigationBar = this.navigationBar
+      document.title = navigationBar.titleText
+      if (typeof qh !== 'undefined') {
+        qh.setNavigationBarTitle({
+          title: document.title
+        })
+        qh.setNavigationBarColor({
+          backgroundColor: navigationBar.backgroundColor
+        })
+        qh.setNavigationBarTextStyle({
+          textStyle: navigationBar.textColor === '#000' ? 'black' : 'white'
+        })
+      }
     }
   }
 }

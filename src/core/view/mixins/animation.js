@@ -27,7 +27,7 @@ function getStyle (action) {
   const style = {}
   let transform = []
   animates.forEach(animate => {
-    const type = animate.type
+    let type = animate.type
     let args = [...animate.args]
     if (animateTypes1.concat(animateTypes2).includes(type)) {
       if (type.startsWith('rotate') || type.startsWith('skew')) {
@@ -35,12 +35,13 @@ function getStyle (action) {
       } else if (type.startsWith('translate')) {
         args = args.map(converPx)
       }
-      if (animateTypes2.indexOf(type)) {
+      if (animateTypes2.indexOf(type) >= 0) {
         args.length = 1
       }
       transform.push(`${type}(${args.join(',')})`)
-    } else if (animateTypes3.concat(animateTypes4).includes(type)) {
-      const value = args[0]
+    } else if (animateTypes3.concat(animateTypes4).includes(args[0])) {
+      type = args[0]
+      const value = args[1]
       style[type] = animateTypes4.includes(type) ? converPx(value) : value
     }
   })

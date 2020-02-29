@@ -231,7 +231,7 @@ const promiseInterceptor = {
 };
 
 const SYNC_API_RE =
-    /^\$|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64/;
+  /^\$|restoreGlobal|getCurrentSubNVue|getMenuButtonBoundingClientRect|^report|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64/;
 
 const CONTEXT_API_RE = /^create|Manager$/;
 
@@ -245,7 +245,7 @@ function isSyncApi (name) {
 }
 
 function isCallbackApi (name) {
-  return CALLBACK_API_RE.test(name)
+  return CALLBACK_API_RE.test(name) && name !== 'onPush'
 }
 
 function handlePromise (promise) {
@@ -258,8 +258,8 @@ function handlePromise (promise) {
 function shouldPromise (name) {
   if (
     isContextApi(name) ||
-        isSyncApi(name) ||
-        isCallbackApi(name)
+    isSyncApi(name) ||
+    isCallbackApi(name)
   ) {
     return false
   }
@@ -344,6 +344,7 @@ const interceptors = {
 
 
 var baseApi = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   upx2px: upx2px,
   interceptors: interceptors,
   addInterceptor: addInterceptor,
@@ -388,6 +389,55 @@ const protocols = {
   previewImage
 };
 const todos = [
+  // 'startBeaconDiscovery',
+  // 'stopBeaconDiscovery',
+  // 'getBeacons',
+  // 'onBeaconUpdate',
+  // 'onBeaconServiceChange',
+  // 'addPhoneContact',
+  // 'getHCEState',
+  // 'startHCE',
+  // 'stopHCE',
+  // 'onHCEMessage',
+  // 'sendHCEMessage',
+  // 'startWifi',
+  // 'stopWifi',
+  // 'connectWifi',
+  // 'getWifiList',
+  // 'onGetWifiList',
+  // 'setWifiList',
+  // 'onWifiConnected',
+  // 'getConnectedWifi',
+  // 'setTopBarText',
+  // 'getPhoneNumber',
+  // 'chooseAddress',
+  // 'addCard',
+  // 'openCard',
+  // 'getWeRunData',
+  // 'launchApp',
+  // 'chooseInvoiceTitle',
+  // 'checkIsSupportSoterAuthentication',
+  // 'startSoterAuthentication',
+  // 'checkIsSoterEnrolledInDevice',
+  // 'vibrate',
+  // 'loadFontFace',
+  // 'getExtConfig',
+  // 'getExtConfigSync'
+];
+const canIUses = [
+  'scanCode',
+  'startAccelerometer',
+  'stopAccelerometer',
+  'onAccelerometerChange',
+  'startCompass',
+  'onCompassChange',
+  'setScreenBrightness',
+  'getScreenBrightness',
+  'setKeepScreenOn',
+  'onUserCaptureScreen',
+  'vibrateLong',
+  'vibrateShort',
+  'createWorker',
   'connectSocket',
   'onSocketOpen',
   'onSocketError',
@@ -395,67 +445,18 @@ const todos = [
   'onSocketMessage',
   'closeSocket',
   'onSocketClose',
-  'createLivePlayerContext',
-  'createLivePusherContext',
-  'loadFontFace',
   'openDocument',
-  'canIUse',
-  'onMemoryWarning',
-  'onNetworkStatusChange',
-  'onAccelerometerChange',
-  'startAccelerometer',
-  'stopAccelerometer',
-  'onCompassChange',
-  'startCompass',
-  'scanCode',
-  'startBeaconDiscovery',
-  'stopBeaconDiscovery',
-  'getBeacons',
-  'onBeaconUpdate',
-  'onBeaconServiceChange',
-  'setScreenBrightness',
-  'getScreenBrightness',
-  'setKeepScreenOn',
-  'onUserCaptureScreen',
-  'vibrateLong',
-  'vibrateShort',
-  'addPhoneContact',
-  'getHCEState',
-  'startHCE',
-  'stopHCE',
-  'onHCEMessage',
-  'sendHCEMessage',
-  'startWifi',
-  'stopWifi',
-  'connectWifi',
-  'getWifiList',
-  'onGetWifiList',
-  'setWifiList',
-  'onWifiConnected',
-  'getConnectedWifi',
-  'setNavigationBarColor',
-  'setTopBarText',
-  'getExtConfig',
-  'getExtConfigSync',
-  'getPhoneNumber',
   'updateShareMenu',
   'getShareInfo',
-  'chooseAddress',
-  'addCard',
-  'openCard',
-  'getWeRunData',
-  'launchApp',
-  'chooseInvoiceTitle',
-  'checkIsSupportSoterAuthentication',
-  'startSoterAuthentication',
-  'checkIsSoterEnrolledInDevice',
-  'createWorker',
+  'createLivePlayerContext',
+  'createLivePusherContext',
+  'setNavigationBarColor',
+  'onMemoryWarning',
+  'onNetworkStatusChange',
   'reportMonitor',
   'getLogManager',
-  'onUserCaptureScreen',
   'reportAnalytics'
 ];
-const canIUses = [];
 
 const CALLBACKS = ['success', 'fail', 'cancel', 'complete'];
 
@@ -539,6 +540,7 @@ function wrapper (methodName, method) {
 const todoApis = Object.create(null);
 
 const TODOS = [
+  'onTabBarMidButtonTap',
   'subscribePush',
   'unsubscribePush',
   'onPush',
@@ -594,6 +596,7 @@ function getProvider ({
 }
 
 var extraApi = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   getProvider: getProvider
 });
 
@@ -628,9 +631,8 @@ function $emit () {
   return apply(getEmitter(), '$emit', [...arguments])
 }
 
-
-
 var eventApi = /*#__PURE__*/Object.freeze({
+  __proto__: null,
   $on: $on,
   $off: $off,
   $once: $once,
@@ -640,7 +642,7 @@ var eventApi = /*#__PURE__*/Object.freeze({
 
 
 var api = /*#__PURE__*/Object.freeze({
-
+  __proto__: null
 });
 
 const MPPage = Page;
@@ -717,8 +719,8 @@ function hasHook (hook, vueOptions) {
       return true
     }
     if (vueOptions.super &&
-            vueOptions.super.options &&
-            Array.isArray(vueOptions.super.options[hook])) {
+      vueOptions.super.options &&
+      Array.isArray(vueOptions.super.options[hook])) {
       return true
     }
     return false
@@ -743,14 +745,14 @@ function initHooks (mpOptions, hooks, vueOptions) {
   });
 }
 
-function initVueComponent (Vue$$1, vueOptions) {
+function initVueComponent (Vue, vueOptions) {
   vueOptions = vueOptions.default || vueOptions;
   let VueComponent;
   if (isFn(vueOptions)) {
     VueComponent = vueOptions;
     vueOptions = VueComponent.extendOptions;
   } else {
-    VueComponent = Vue$$1.extend(vueOptions);
+    VueComponent = Vue.extend(vueOptions);
   }
   return [VueComponent, vueOptions]
 }
@@ -917,7 +919,7 @@ function initProperties (props, isBehavior = false, file = '') {
           value = value();
         }
 
-        opts.type = parsePropType(key, opts.type, value, file);
+        opts.type = parsePropType(key, opts.type);
 
         properties[key] = {
           type: PROP_TYPES.indexOf(opts.type) !== -1 ? opts.type : null,
@@ -925,7 +927,7 @@ function initProperties (props, isBehavior = false, file = '') {
           observer: createObserver(key)
         };
       } else { // content:String
-        const type = parsePropType(key, opts, null, file);
+        const type = parsePropType(key, opts);
         properties[key] = {
           type: PROP_TYPES.indexOf(type) !== -1 ? type : null,
           observer: createObserver(key)
@@ -1000,16 +1002,16 @@ function processEventExtra (vm, extra, event) {
 
   if (Array.isArray(extra) && extra.length) {
     /**
-         *[
-         *    ['data.items', 'data.id', item.data.id],
-         *    ['metas', 'id', meta.id]
-         *],
-         *[
-         *    ['data.items', 'data.id', item.data.id],
-         *    ['metas', 'id', meta.id]
-         *],
-         *'test'
-         */
+     *[
+     *    ['data.items', 'data.id', item.data.id],
+     *    ['metas', 'id', meta.id]
+     *],
+     *[
+     *    ['data.items', 'data.id', item.data.id],
+     *    ['metas', 'id', meta.id]
+     *],
+     *'test'
+     */
     extra.forEach((dataPath, index) => {
       if (typeof dataPath === 'string') {
         if (!dataPath) { // model,prop.sync
@@ -1045,8 +1047,8 @@ function processEventArgs (vm, event, args = [], extra = [], isCustom, methodNam
   let isCustomMPEvent = false; // wxcomponent 组件，传递原始 event 对象
   if (isCustom) { // 自定义事件
     isCustomMPEvent = event.currentTarget &&
-            event.currentTarget.dataset &&
-            event.currentTarget.dataset.comType === 'wx';
+      event.currentTarget.dataset &&
+      event.currentTarget.dataset.comType === 'wx';
     if (!args.length) { // 无参数，直接传入 event 或 detail 数组
       if (isCustomMPEvent) {
         return [event]
@@ -1088,13 +1090,13 @@ const CUSTOM = '^';
 
 function isMatchEventType (eventType, optType) {
   return (eventType === optType) ||
-        (
-          optType === 'regionchange' &&
-            (
-              eventType === 'begin' ||
-                eventType === 'end'
-            )
-        )
+    (
+      optType === 'regionchange' &&
+      (
+        eventType === 'begin' ||
+        eventType === 'end'
+      )
+    )
 }
 
 function handleEvent (event) {
@@ -1105,13 +1107,16 @@ function handleEvent (event) {
   if (!dataset) {
     return console.warn(`事件信息不存在`)
   }
-  const eventOpts = dataset.eventOpts || dataset['event-opts'];// 支付宝 web-view 组件 dataset 非驼峰
+  const eventOpts = dataset.eventOpts || dataset['event-opts']; // 支付宝 web-view 组件 dataset 非驼峰
   if (!eventOpts) {
     return console.warn(`事件信息不存在`)
   }
 
   // [['handle',[1,2,a]],['handle1',[1,2,a]]]
   const eventType = event.type;
+
+  const ret = [];
+
   eventOpts.forEach(eventOpt => {
     let type = eventOpt[0];
     const eventsArray = eventOpt[1];
@@ -1128,10 +1133,22 @@ function handleEvent (event) {
           let handlerCtx = this.$vm;
           if (
             handlerCtx.$options.generic &&
-                        handlerCtx.$parent &&
-                        handlerCtx.$parent.$parent
+            handlerCtx.$parent &&
+            handlerCtx.$parent.$parent
           ) { // mp-weixin,mp-toutiao 抽象节点模拟 scoped slots
             handlerCtx = handlerCtx.$parent.$parent;
+          }
+          if (methodName === '$emit') {
+            handlerCtx.$emit.apply(handlerCtx,
+              processEventArgs(
+                this.$vm,
+                event,
+                eventArray[1],
+                eventArray[2],
+                isCustom,
+                methodName
+              ));
+            return
           }
           const handler = handlerCtx[methodName];
           if (!isFn(handler)) {
@@ -1143,18 +1160,26 @@ function handleEvent (event) {
             }
             handler.once = true;
           }
-          handler.apply(handlerCtx, processEventArgs(
+          ret.push(handler.apply(handlerCtx, processEventArgs(
             this.$vm,
             event,
             eventArray[1],
             eventArray[2],
             isCustom,
             methodName
-          ));
+          )));
         }
       });
     }
   });
+
+  if (
+    eventType === 'input' &&
+    ret.length === 1 &&
+    typeof ret[0] !== 'undefined'
+  ) {
+    return ret[0]
+  }
 }
 
 const hooks = [
@@ -1168,6 +1193,10 @@ function parseBaseApp (vm, {
   mocks,
   initRefs
 }) {
+  if (vm.$options.store) {
+    Vue.prototype.$store = vm.$options.store;
+  }
+
   Vue.prototype.mpHost = "mp-qq";
 
   Vue.mixin({
@@ -1200,6 +1229,11 @@ function parseBaseApp (vm, {
       if (this.$vm) { // 已经初始化过了，主要是为了百度，百度 onShow 在 onLaunch 之前
         return
       }
+      {
+        if (!wx.canIUse('nextTick')) { // 事实 上2.2.3 即可，简单使用 2.3.0 的 nextTick 判断
+          console.error('当前微信基础库版本过低，请将 微信开发者工具-详情-项目设置-调试基础库版本 更换为`2.3.0`以上');
+        }
+      }
 
       this.$vm = vm;
 
@@ -1208,6 +1242,8 @@ function parseBaseApp (vm, {
       };
 
       this.$vm.$scope = this;
+      // vm 上也挂载 globalData
+      this.$vm.globalData = this.globalData;
 
       this.$vm._isMounted = true;
       this.$vm.__call_hook('mounted', args);
@@ -1218,6 +1254,13 @@ function parseBaseApp (vm, {
 
   // 兼容旧版本 globalData
   appOptions.globalData = vm.$options.globalData || {};
+  // 将 methods 中的方法挂在 getApp() 中
+  const methods = vm.$options.methods;
+  if (methods) {
+    Object.keys(methods).forEach(name => {
+      appOptions[name] = methods[name];
+    });
+  }
 
   initHooks(appOptions, hooks);
 
@@ -1228,12 +1271,15 @@ const mocks = ['__route__', '__wxExparserNodeId__', '__wxWebviewId__'];
 
 function findVmByVueId (vm, vuePid) {
   const $children = vm.$children;
-  // 优先查找直属
-  let parentVm = $children.find(childVm => childVm.$scope._$vueId === vuePid);
-  if (parentVm) {
-    return parentVm
+  // 优先查找直属(反向查找:https://github.com/dcloudio/uni-app/issues/1200)
+  for (let i = $children.length - 1; i >= 0; i--) {
+    const childVm = $children[i];
+    if (childVm.$scope._$vueId === vuePid) {
+      return childVm
+    }
   }
   // 反向递归查找
+  let parentVm;
   for (let i = $children.length - 1; i >= 0; i--) {
     parentVm = findVmByVueId($children[i], vuePid);
     if (parentVm) {
@@ -1313,16 +1359,25 @@ function createApp (vm) {
 }
 
 function parseBaseComponent (vueComponentOptions, {
-  isPage: isPage$$1,
-  initRelation: initRelation$$1
+  isPage,
+  initRelation
 } = {}) {
   let [VueComponent, vueOptions] = initVueComponent(Vue, vueComponentOptions);
 
+  const options = {
+    multipleSlots: true,
+    addGlobalClass: true
+  };
+
+  {
+    // 微信 multipleSlots 部分情况有 bug，导致内容顺序错乱 如 u-list，提供覆盖选项
+    if (vueOptions['mp-weixin'] && vueOptions['mp-weixin']['options']) {
+      Object.assign(options, vueOptions['mp-weixin']['options']);
+    }
+  }
+
   const componentOptions = {
-    options: {
-      multipleSlots: true,
-      addGlobalClass: true
-    },
+    options,
     data: initData(vueOptions, Vue.prototype),
     behaviors: initBehaviors(vueOptions, initBehavior),
     properties: initProperties(vueOptions.props, false, vueOptions.__file),
@@ -1331,7 +1386,7 @@ function parseBaseComponent (vueComponentOptions, {
         const properties = this.properties;
 
         const options = {
-          mpType: isPage$$1.call(this) ? 'page' : 'component',
+          mpType: isPage.call(this) ? 'page' : 'component',
           mpInstance: this,
           propsData: properties
         };
@@ -1339,7 +1394,7 @@ function parseBaseComponent (vueComponentOptions, {
         initVueIds(properties.vueId, this);
 
         // 处理父子关系
-        initRelation$$1.call(this, {
+        initRelation.call(this, {
           vuePid: this._$vuePid,
           vueOptions: options
         });
@@ -1363,7 +1418,7 @@ function parseBaseComponent (vueComponentOptions, {
         }
       },
       detached () {
-        this.$vm.$destroy();
+        this.$vm && this.$vm.$destroy();
       }
     },
     pageLifetimes: {
@@ -1383,7 +1438,15 @@ function parseBaseComponent (vueComponentOptions, {
     }
   };
 
-  if (isPage$$1) {
+  if (Array.isArray(vueOptions.wxsCallMethods)) {
+    vueOptions.wxsCallMethods.forEach(callMethod => {
+      componentOptions.methods[callMethod] = function (args) {
+        return this.$vm[callMethod](args)
+      };
+    });
+  }
+
+  if (isPage) {
     return componentOptions
   }
   return [componentOptions, VueComponent]
@@ -1412,10 +1475,7 @@ function parseBasePage (vuePageOptions, {
   isPage,
   initRelation
 }) {
-  const pageOptions = parseComponent$1(vuePageOptions, {
-    isPage,
-    initRelation
-  });
+  const pageOptions = parseComponent$1(vuePageOptions);
 
   initHooks(pageOptions.methods, hooks$1, vuePageOptions);
 
@@ -1467,6 +1527,9 @@ let uni = {};
 if (typeof Proxy !== 'undefined' && "mp-qq" !== 'app-plus') {
   uni = new Proxy({}, {
     get (target, name) {
+      if (target[name]) {
+        return target[name]
+      }
       if (baseApi[name]) {
         return baseApi[name]
       }
@@ -1488,6 +1551,10 @@ if (typeof Proxy !== 'undefined' && "mp-qq" !== 'app-plus') {
         return
       }
       return promisify(name, wrapper(name, wx[name]))
+    },
+    set (target, name, value) {
+      target[name] = value;
+      return true
     }
   });
 } else {
@@ -1526,4 +1593,4 @@ wx.createComponent = createComponent;
 var uni$1 = uni;
 
 export default uni$1;
-export { createApp, createPage, createComponent };
+export { createApp, createComponent, createPage };
